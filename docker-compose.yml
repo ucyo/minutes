@@ -1,0 +1,9 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./data:/root/.local/share/tgsa

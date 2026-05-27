@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tgsa"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "typer",
+    "rich",
+    "prompt_toolkit",
+]
+
+[project.scripts]
+tgsa = "tgsa.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tgsa"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
