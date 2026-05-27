@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from prompt_toolkit import PromptSession
+from prompt_toolkit.application import get_app
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
@@ -34,14 +35,30 @@ def _exit_on_ctrl_d(event):
 
 
 def _toolbar() -> HTML:
+    try:
+        text = get_app().current_buffer.text
+    except Exception:
+        text = ""
+
+    if text.startswith("*"):
+        return HTML(
+            "  <ansiblue><b>decision</b></ansiblue>  —  type the decision text"
+        )
+    if text.startswith("!"):
+        return HTML(
+            "  <ansiyellow><b>action</b></ansiyellow>  —  "
+            "due date: <ansigreen>@fri  @7  @2026-05-30</ansigreen>"
+        )
+    if text.startswith(">"):
+        return HTML(
+            "  <ansimagenta><b>waiting</b></ansimagenta>  —  "
+            "person: <ansigreen>@Person</ansigreen>"
+        )
     return HTML(
-        "  <b>Prefixes:</b>  "
-        "<ansiblue>*</ansiblue> decision  "
+        "  <ansiblue>*</ansiblue> decision  "
         "<ansiyellow>!</ansiyellow> action  "
         "<ansimagenta>&gt;</ansimagenta> waiting  "
-        "(none) note"
-        "  │  "
-        "<b>Date:</b> <ansigreen>@fri  @7  @2026-05-30</ansigreen>"
+        "note"
         "  │  "
         "Empty line or Ctrl+D to finish"
     )
@@ -94,7 +111,7 @@ def parse_line(raw: str, meeting: Optional[str] = None) -> Optional[Entry]:
     if raw.startswith(">"):
         rest = raw[1:].strip()
         person = None
-        m = re.search(r"(?:from|→)\s+(\w+)", rest, re.IGNORECASE)
+        m = re.search(r"@(\w+)", rest)
         if m:
             person = m.group(1)
             rest = (rest[: m.start()] + rest[m.end() :]).strip()
@@ -126,9 +143,13 @@ def run_add(store: Optional[Path] = None) -> None:
 
     console.print()
 
+    def _show_all_completions():
+        get_app().current_buffer.start_completion(select_first=False)
+
     try:
         project = project_session.prompt(
             HTML("<ansiblue><b>Project: </b></ansiblue>"),
+            pre_run=_show_all_completions,
         ).strip()
     except (EOFError, KeyboardInterrupt):
         console.print("[dim]Aborted.[/dim]")

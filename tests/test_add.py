@@ -69,15 +69,17 @@ class TestParseLine:
         assert e.type == EntryType.WAITING
         assert e.text == "v2 spec approval"
 
-    def test_waiting_with_person_from(self):
-        e = parse_line("> v2 spec from Marco")
+    def test_waiting_with_person(self):
+        e = parse_line("> v2 spec @Marco")
         assert e is not None
         assert e.person == "Marco"
+        assert "@Marco" not in e.text
 
-    def test_waiting_with_person_arrow(self):
-        e = parse_line("> v2 spec → Anna")
+    def test_waiting_person_stripped_from_text(self):
+        e = parse_line("> get approval @Anna")
         assert e is not None
         assert e.person == "Anna"
+        assert e.text == "get approval"
 
     def test_empty_line_returns_none(self):
         assert parse_line("") is None
