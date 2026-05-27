@@ -49,13 +49,14 @@ def logs(
     project: Optional[str] = typer.Option(None, "--project", "-p", help="Scope to one project"),
     since: Optional[str] = typer.Option(None, "--since", help="Restrict to entries since: 'mon', integer days back, or YYYY-MM-DD"),
     open_only: bool = typer.Option(False, "--open", help="Show only open actions and waiting entries"),
+    show_all: bool = typer.Option(False, "--all", help="Show all fields: meeting, tags, done timestamp"),
     file: Optional[Path] = typer.Option(None, "--file"),
 ) -> None:
     """Show entries chronologically. All entries by default, restrict with --since."""
     since_date = parse_since(since) if since else None
     entries = load_entries(file)
     filtered = filter_entries(entries, since=since_date, project=project, open_only=open_only)
-    render_logs(filtered, since_date, project=project)
+    render_logs(filtered, since_date, project=project, show_all=show_all)
 
 
 def main() -> None:

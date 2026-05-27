@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from typing import Optional
 
 from rich.console import Console
+from rich.table import Table
 from rich.text import Text
 
 from .models import Entry, EntryStatus, EntryType
@@ -25,7 +26,6 @@ def _due_style(due_str: Optional[str]) -> str:
     return ""
 
 
-
 _TYPE_COLORS = {
     EntryType.DECISION: "blue",
     EntryType.ACTION: "yellow",
@@ -41,14 +41,11 @@ _TYPE_LABELS = {
 }
 
 
-def _log_line(entry: Entry, show_project: bool = True) -> None:
+def _build_line(entry: Entry) -> Text:
     ts = entry.ts[:16].replace("T", " ")
     line = Text()
     line.append(ts, style="dim")
-
-    if show_project:
-        line.append(f"  {entry.project:<20}", style="cyan")
-
+    line.append(f"  {entry.project:<20}", style="cyan")
     line.append("  ")
 
     color = _TYPE_COLORS[entry.type]
@@ -56,11 +53,14 @@ def _log_line(entry: Entry, show_project: bool = True) -> None:
 
     if entry.type == EntryType.ACTION:
         done = entry.status == EntryStatus.DONE
+        cancelled = entry.status == EntryStatus.CANCELLED
         if done:
             color = "green"
+        elif cancelled:
+            color = "dim"
         elif entry.due:
             color = _due_style(entry.due) or color
-        checkbox = " [x]" if done else " [ ]"
+        checkbox = " [x]" if done else (" [-]" if cancelled else " [ ]")
         line.append(f"{label:<10}", style=color)
         line.append(entry.text + checkbox, style=f"{color} strike" if done else color)
         if entry.due and not done:
@@ -76,17 +76,44 @@ def _log_line(entry: Entry, show_project: bool = True) -> None:
         line.append(f"{label:<10}", style=color)
         line.append(entry.text, style=color)
 
-    console.print(line)
+    return line
 
 
-def render_logs(entries: list[Entry], since: Optional[date] = None, project: Optional[str] = None) -> None:
+def _build_meta(entry: Entry) -> Text:
+    meta = Text()
+    parts = []
+    if entry.meeting:
+        parts.append((entry.meeting, "dim"))
+    for tag in entry.tags:
+        parts.append((f"#{tag}", "dim"))
+    if entry.type == EntryType.ACTION and entry.status == EntryStatus.DONE and entry.updated_ts:
+        parts.append((f"done {entry.updated_ts[:16].replace('T', ' ')}", "dim"))
+    for i, (text, style) in enumerate(parts):
+        if i:
+            meta.append("  ", style="dim")
+        meta.append(text, style=style)
+    return meta
+
+
+def render_logs(
+    entries: list[Entry],
+    since: Optional[date] = None,
+    project: Optional[str] = None,
+    show_all: bool = False,
+) -> None:
     if not entries:
         console.print("[dim]No entries found.[/dim]")
         return
 
-    for entry in sorted(entries, key=lambda e: e.ts):
-        _log_line(entry, show_project=True)
+    sorted_entries = sorted(entries, key=lambda e: e.ts)
 
-
-
-
+    if not show_all:
+        for entry in sorted_entries:
+            console.print(_build_line(entry))
+    else:
+        table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
+        table.add_column()
+        table.add_column(style="dim")
+        for entry in sorted_entries:
+            table.add_row(_build_line(entry), _build_meta(entry))
+        console.print(table)
