@@ -41,13 +41,8 @@ _TYPE_LABELS = {
 }
 
 
-def _build_line(entry: Entry) -> Text:
-    ts = entry.ts[:16].replace("T", " ")
-    line = Text()
-    line.append(ts, style="dim")
-    line.append(f"  {entry.project:<20}", style="cyan")
-    line.append("  ")
-
+def _build_parts(entry: Entry) -> tuple[Text, Text]:
+    """Return (label, content) Text objects for a single entry."""
     color = _TYPE_COLORS[entry.type]
     label = _TYPE_LABELS[entry.type]
 
@@ -61,38 +56,31 @@ def _build_line(entry: Entry) -> Text:
         elif entry.due:
             color = _due_style(entry.due) or color
         checkbox = " [x]" if done else (" [-]" if cancelled else " [ ]")
-        line.append(f"{label:<10}", style=color)
-        line.append(entry.text + checkbox, style=f"{color} strike" if done else color)
-        if entry.due and not done:
-            line.append(f"  due {entry.due}", style=_due_style(entry.due) or "dim")
+        content = Text()
+        content.append(entry.text + checkbox, style=f"{color} strike" if done else color)
+        if entry.due and not done and not cancelled:
+            content.append(f"  due {entry.due}", style=_due_style(entry.due) or "dim")
 
     elif entry.type == EntryType.WAITING:
-        line.append(f"{label:<10}", style=color)
-        line.append(entry.text, style=color)
+        content = Text()
+        content.append(entry.text, style=color)
         if entry.person:
-            line.append(f"  → {entry.person}", style="dim magenta")
+            content.append(f"  → {entry.person}", style="dim magenta")
 
     else:
-        line.append(f"{label:<10}", style=color)
-        line.append(entry.text, style=color)
+        content = Text(entry.text, style=color)
 
-    return line
+    return Text(label, style=color), content
 
 
-def _build_meta(entry: Entry) -> Text:
-    meta = Text()
-    parts = []
-    if entry.meeting:
-        parts.append((entry.meeting, "dim"))
-    for tag in entry.tags:
-        parts.append((f"#{tag}", "dim"))
+def _build_meta(entry: Entry) -> tuple[Text, Text, Text]:
+    """Return (meeting, tags, updated_ts) as separate Text objects."""
+    meeting = Text(entry.meeting or "", style="dim")
+    tags = Text("  ".join(f"#{t}" for t in entry.tags), style="dim")
+    updated = Text()
     if entry.type == EntryType.ACTION and entry.status == EntryStatus.DONE and entry.updated_ts:
-        parts.append((f"done {entry.updated_ts[:16].replace('T', ' ')}", "dim"))
-    for i, (text, style) in enumerate(parts):
-        if i:
-            meta.append("  ", style="dim")
-        meta.append(text, style=style)
-    return meta
+        updated = Text(entry.updated_ts[:16].replace("T", " "), style="dim")
+    return meeting, tags, updated
 
 
 def render_logs(
@@ -105,15 +93,25 @@ def render_logs(
         console.print("[dim]No entries found.[/dim]")
         return
 
-    sorted_entries = sorted(entries, key=lambda e: e.ts)
+    table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
+    table.add_column(no_wrap=True)   # timestamp
+    table.add_column(no_wrap=True)   # project
+    table.add_column(no_wrap=True)   # type label
+    table.add_column()               # content — wraps here
+    if show_all:
+        table.add_column(no_wrap=True)  # meeting
+        table.add_column(no_wrap=True)  # tags
+        table.add_column(no_wrap=True)  # updated_ts
 
-    if not show_all:
-        for entry in sorted_entries:
-            console.print(_build_line(entry))
-    else:
-        table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
-        table.add_column()
-        table.add_column(style="dim")
-        for entry in sorted_entries:
-            table.add_row(_build_line(entry), _build_meta(entry))
-        console.print(table)
+    for entry in sorted(entries, key=lambda e: e.ts):
+        ts = Text(entry.ts[:16].replace("T", " "), style="dim")
+        proj = Text(entry.project, style="cyan")
+        label, content = _build_parts(entry)
+
+        if show_all:
+            meeting, tags, updated = _build_meta(entry)
+            table.add_row(ts, proj, label, content, meeting, tags, updated)
+        else:
+            table.add_row(ts, proj, label, content)
+
+    console.print(table)
