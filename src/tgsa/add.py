@@ -134,7 +134,7 @@ def _echo_entry(entry: Entry) -> None:
     console.print(f"  [{color}]{label:10}[/{color}] {entry.text}{extra}")
 
 
-def run_add(store: Optional[Path] = None) -> None:
+def run_add(store: Optional[Path] = None, project: Optional[str] = None) -> None:
     projects = get_projects(store)
     project_session: PromptSession = PromptSession(
         style=_STYLE, completer=FuzzyWordCompleter(projects)
@@ -149,6 +149,7 @@ def run_add(store: Optional[Path] = None) -> None:
     try:
         project = project_session.prompt(
             HTML("<ansiblue><b>Project: </b></ansiblue>"),
+            default=project or "",
             pre_run=_show_all_completions,
         ).strip()
     except (EOFError, KeyboardInterrupt):

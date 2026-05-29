@@ -53,7 +53,7 @@ def add(
         if text is not None and project is None:
             console.print("[red]Inline mode requires --project.[/red]")
             raise typer.Exit(1)
-        run_add(file)
+        run_add(file, project=project)
 
 
 @app.command()
