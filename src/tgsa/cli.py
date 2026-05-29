@@ -11,6 +11,7 @@ from .display import render_logs
 from .store import (
     append_entry,
     filter_entries,
+    get_projects,
     load_entries,
     parse_since,
 )
@@ -22,10 +23,21 @@ app = typer.Typer(
 console = Console()
 
 
+def _complete_project(incomplete: str) -> list[str]:
+    try:
+        return [p for p in get_projects() if incomplete.lower() in p.lower()]
+    except Exception:
+        return []
+
+
 @app.command()
 def add(
     text: Optional[str] = typer.Argument(None, help="Inline entry (skips interactive mode)"),
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Project slug"),
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p",
+        help="Project slug",
+        autocompletion=_complete_project,
+    ),
     file: Optional[Path] = typer.Option(None, "--file", help="Override store path"),
 ) -> None:
     """Add entries for a project interactively, or inline with --project."""
@@ -46,7 +58,11 @@ def add(
 
 @app.command()
 def logs(
-    project: Optional[str] = typer.Option(None, "--project", "-p", help="Scope to one project"),
+    project: Optional[str] = typer.Option(
+        None, "--project", "-p",
+        help="Scope to one project",
+        autocompletion=_complete_project,
+    ),
     since: Optional[str] = typer.Option(None, "--since", help="Restrict to entries since: 'mon', integer days back, or YYYY-MM-DD"),
     open_only: bool = typer.Option(False, "--open", help="Show only open actions and waiting entries"),
     show_all: bool = typer.Option(False, "--all", help="Show all fields: meeting, tags, done timestamp"),

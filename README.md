@@ -29,6 +29,14 @@ You will be prompted for a project name (with autocomplete) and an optional meet
 
 Press Enter on an empty line or Ctrl+D to finish. Each entry is saved immediately.
 
+**Enable shell completion (once):**
+
+```bash
+tgsa --install-completion
+```
+
+After restarting your shell, `tgsa logs -p <TAB>` and `tgsa add -p <TAB>` will autocomplete project names from your store.
+
 **Browse entries:**
 
 ```bash
