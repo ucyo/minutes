@@ -3,20 +3,23 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "minutes"
+name = "minutes-cli"
 version = "0.1.0"
+description = "Project-centric meeting notes and task tracker for the command line"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Ugur Cayoglu", email = "cayoglu@me.com" }]
 requires-python = ">=3.11"
-dependencies = [
-    "typer",
-    "rich",
-    "prompt_toolkit",
-]
+dependencies = ["typer", "rich", "prompt_toolkit"]
 
 [project.scripts]
 minutes = "minutes.cli:main"
 
+[project.urls]
+Repository = "https://github.com/ucyo/minutes"
+
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "build", "twine"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/minutes"]
