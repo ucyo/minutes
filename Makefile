@@ -1,4 +1,4 @@
-.PHONY: build test rebuild clean shell
+.PHONY: build test rebuild clean shell push dry-run
 
 build:
 	docker compose build test
@@ -15,3 +15,13 @@ shell: build
 
 clean:
 	docker compose down --rmi local --volumes --remove-orphans
+
+dry-run: build
+	docker compose run --rm \
+		-v $(PWD)/.pypirc:/root/.pypirc:ro \
+		test bash -c "rm -rf dist/ && python -m build && twine check dist/* && twine upload --repository testpypi dist/*"
+
+push: build
+	docker compose run --rm \
+		-v $(PWD)/.pypirc:/root/.pypirc:ro \
+		test bash -c "rm -rf dist/ && python -m build && twine check dist/* && twine upload dist/*"
