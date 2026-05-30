@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "minutes-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "Project-centric meeting notes and task tracker for the command line"
 readme = "README.md"
 license = { text = "MIT" }
