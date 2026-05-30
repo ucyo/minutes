@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 from typing import Optional
 
@@ -82,6 +83,7 @@ def info(
 ) -> None:
     """Show store location and entry count."""
     path = file or DEFAULT_PATH
+    console.print(f"[dim]version[/dim]  {pkg_version('minutes-cli')}")
     if path.exists():
         count = len(load_entries(file))
         console.print(f"[dim]store  [/dim]  {path}")
