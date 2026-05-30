@@ -6,4 +6,4 @@ services:
     volumes:
       - ./src:/app/src
       - ./tests:/app/tests
-      - ./data:/root/.local/share/tgsa
+      - ./data:/root/.local/share/minutes

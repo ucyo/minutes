@@ -1,4 +1,4 @@
-from tgsa.models import Entry, EntryStatus, EntryType
+from minutes.models import Entry, EntryStatus, EntryType
 
 
 def test_entry_roundtrip():

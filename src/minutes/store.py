@@ -7,7 +7,7 @@ from typing import Optional
 
 from .models import Entry, EntryStatus, EntryType
 
-DEFAULT_PATH = Path.home() / ".local" / "share" / "tgsa" / "entries.jsonl"
+DEFAULT_PATH = Path.home() / ".local" / "share" / "minutes" / "entries.jsonl"
 
 
 def get_store_path(override: Optional[Path] = None) -> Path:

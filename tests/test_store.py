@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from tgsa.models import Entry, EntryStatus, EntryType
-from tgsa.store import (
+from minutes.models import Entry, EntryStatus, EntryType
+from minutes.store import (
     append_entry,
     filter_entries,
     load_entries,

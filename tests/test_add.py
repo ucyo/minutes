@@ -2,8 +2,8 @@ from datetime import date, timedelta
 
 import pytest
 
-from tgsa.add import parse_line, _parse_due
-from tgsa.models import EntryStatus, EntryType
+from minutes.add import parse_line, _parse_due
+from minutes.models import EntryStatus, EntryType
 
 
 class TestParseDue:

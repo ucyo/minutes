@@ -1,4 +1,4 @@
-# tgsa
+# minutes
 
 Project-centric meeting notes and task tracker for the command line.
 
@@ -15,7 +15,7 @@ pip install -e .
 **Add entries after a meeting:**
 
 ```bash
-tgsa add
+minutes add
 ```
 
 You will be prompted for a project name (with autocomplete) and an optional meeting name. Then enter entries one per line:
@@ -32,24 +32,24 @@ Press Enter on an empty line or Ctrl+D to finish. Each entry is saved immediatel
 **Enable shell completion (once):**
 
 ```bash
-tgsa --install-completion
+minutes --install-completion
 ```
 
-After restarting your shell, `tgsa logs -p <TAB>` and `tgsa add -p <TAB>` will autocomplete project names from your store.
+After restarting your shell, `minutes logs -p <TAB>` and `minutes add -p <TAB>` will autocomplete project names from your store.
 
 **Browse entries:**
 
 ```bash
-tgsa logs                          # all projects, all entries
-tgsa logs --project api-migration  # one project in detail
-tgsa logs --since 14               # last 14 days
-tgsa logs --since mon              # since Monday
+minutes logs                          # all projects, all entries
+minutes logs --project api-migration  # one project in detail
+minutes logs --since 14               # last 14 days
+minutes logs --since mon              # since Monday
 ```
 
 **Check open actions:**
 
 ```bash
-tgsa logs --open
+minutes logs --open
 ```
 
 ## Running tests
@@ -60,6 +60,6 @@ make test
 
 ## Data
 
-Entries are stored as JSONL at `~/.local/share/tgsa/entries.jsonl`.
+Entries are stored as JSONL at `~/.local/share/minutes/entries.jsonl`.
 
 See [docs/whitepaper.md](docs/whitepaper.md) for the full specification.

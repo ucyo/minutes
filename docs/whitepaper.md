@@ -1,8 +1,8 @@
-# tgsa — Technical Whitepaper
+# minutes — Technical Whitepaper
 
 ## 1. Purpose
 
-`tgsa` is a command-line tool for capturing, organizing, and retrieving work context across projects. It is optimized for two retrieval patterns:
+`minutes` is a command-line tool for capturing, organizing, and retrieving work context across projects. It is optimized for two retrieval patterns:
 
 - **Breadth view**: all active projects summarized for a management update
 - **Depth view**: one project's full activity for a team sync
@@ -74,7 +74,7 @@ Each line in the JSONL file is a self-contained JSON object. Fields:
 ### Storage
 
 ```
-~/.local/share/tgsa/
+~/.local/share/minutes/
     entries.jsonl       # all entries, append-only
 ```
 
@@ -95,12 +95,12 @@ These flags are available on most commands where they apply:
 
 ---
 
-### `tgsa add`
+### `minutes add`
 
 Interactively add one or more entries after a meeting.
 
 ```
-$ tgsa add
+$ minutes add
 Project: api[↵]          ← fuzzy autocomplete from existing projects
   → api-migration
   → api-gateway
@@ -125,7 +125,7 @@ Each entry is written to disk immediately after pressing Enter — a crash mid-s
 **Inline variant** (no interactive prompt):
 
 ```bash
-tgsa add --project api-migration "* Drop v1 endpoints by Q3"
+minutes add --project api-migration "* Drop v1 endpoints by Q3"
 ```
 
 **Date shorthand in `@` suffix:**
@@ -138,12 +138,12 @@ tgsa add --project api-migration "* Drop v1 endpoints by Q3"
 
 ---
 
-### `tgsa logs`
+### `minutes logs`
 
 All entries grouped by project. Pass `--since` to restrict to a time window. Designed for update preparation.
 
 ```
-$ tgsa logs
+$ minutes logs
 
 All projects
 
@@ -157,7 +157,7 @@ All projects
 **With `--project`** — full detail for one project (depth view):
 
 ```
-$ tgsa logs --project api-migration
+$ minutes logs --project api-migration
 
 api-migration
 
@@ -214,7 +214,7 @@ When `--since` is omitted, all entries are shown.
 ### After a meeting
 
 1. Open terminal
-2. `tgsa add`
+2. `minutes add`
 3. Enter project name — autocomplete suggests existing slugs
 4. Enter optional meeting name
 5. Transcribe action items, decisions, and notes from paper using prefixes
@@ -222,17 +222,17 @@ When `--since` is omitted, all entries are shown.
 
 ### Before a team lead update
 
-1. `tgsa logs --since mon`
+1. `minutes logs --since mon`
 2. Read output top to bottom — one line per project
 
 ### Before a per-project dev sync
 
-1. `tgsa logs --project <slug> --since mon`
+1. `minutes logs --project <slug> --since mon`
 2. Use output as the agenda
 
 ### Daily check
 
-1. `tgsa logs --open`
+1. `minutes logs --open`
 2. Work through open actions and waiting entries interactively
 
 ---
@@ -256,7 +256,7 @@ When `--since` is omitted, all entries are shown.
 ## 8. Project Structure
 
 ```
-tgsa/
+minutes/
 ├── pyproject.toml
 ├── Dockerfile.test
 ├── docker-compose.yml
@@ -264,7 +264,7 @@ tgsa/
 ├── docs/
 │   └── whitepaper.md
 └── src/
-    └── tgsa/
+    └── minutes/
         ├── __init__.py
         ├── cli.py        # Typer commands and routing
         ├── models.py     # Entry dataclass, type enums, serialization
