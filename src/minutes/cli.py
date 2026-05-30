@@ -9,6 +9,7 @@ from rich.console import Console
 from .add import parse_line, run_add
 from .display import render_logs
 from .store import (
+    DEFAULT_PATH,
     append_entry,
     filter_entries,
     get_projects,
@@ -73,6 +74,21 @@ def logs(
     entries = load_entries(file)
     filtered = filter_entries(entries, since=since_date, project=project, open_only=open_only)
     render_logs(filtered, since_date, project=project, show_all=show_all)
+
+
+@app.command()
+def info(
+    file: Optional[Path] = typer.Option(None, "--file"),
+) -> None:
+    """Show store location and entry count."""
+    path = file or DEFAULT_PATH
+    if path.exists():
+        count = len(load_entries(file))
+        console.print(f"[dim]store  [/dim]  {path}")
+        console.print(f"[dim]entries[/dim]  {count}")
+    else:
+        console.print(f"[dim]store  [/dim]  {path}")
+        console.print(f"[dim]entries[/dim]  [dim]store not initialised yet[/dim]")
 
 
 def main() -> None:
