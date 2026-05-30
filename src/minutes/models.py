@@ -74,7 +74,7 @@ class Entry:
 
     @staticmethod
     def make_id() -> str:
-        return uuid.uuid4().hex[:4]
+        return uuid.uuid4().hex[:7]
 
     @staticmethod
     def now_ts() -> str:

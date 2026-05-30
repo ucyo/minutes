@@ -44,7 +44,7 @@ Each line in the JSONL file is a self-contained JSON object. Fields:
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | string | Short unique identifier, e.g. `a3f2` (first 4 chars of a UUID4) |
+| `id` | string | Short unique identifier, e.g. `a3f2b1c` (first 7 chars of a UUID4) |
 | `ts` | string | ISO 8601 timestamp, e.g. `2026-05-27T14:30` |
 | `project` | string | Project slug |
 | `type` | string | One of `note`, `action`, `decision`, `waiting` |
@@ -64,11 +64,11 @@ Each line in the JSONL file is a self-contained JSON object. Fields:
 ### Example entries
 
 ```jsonl
-{"id": "a3f2", "ts": "2026-05-27T14:30", "project": "api-migration", "meeting": "team sync", "type": "decision", "text": "Drop support for v1 endpoints by end of Q3"}
-{"id": "b81c", "ts": "2026-05-27T14:30", "project": "api-migration", "meeting": "team sync", "type": "action", "text": "Write migration guide for downstream consumers", "due": "2026-05-30", "status": "open"}
-{"id": "c55d", "ts": "2026-05-27T14:30", "project": "api-migration", "type": "waiting", "text": "v2 spec approval", "person": "Marco"}
-{"id": "d009", "ts": "2026-05-27T09:15", "project": "onboarding", "type": "note", "text": "New hire Clara starts June 3, needs laptop provisioned"}
-{"id": "e7a1", "ts": "2026-05-26T11:00", "project": "billing-rewrite", "meeting": "architecture review", "type": "decision", "text": "Use event sourcing for the audit log"}
+{"id": "a3f2b1c", "ts": "2026-05-27T14:30", "project": "api-migration", "meeting": "team sync", "type": "decision", "text": "Drop support for v1 endpoints by end of Q3"}
+{"id": "b81c4d2", "ts": "2026-05-27T14:30", "project": "api-migration", "meeting": "team sync", "type": "action", "text": "Write migration guide for downstream consumers", "due": "2026-05-30", "status": "open"}
+{"id": "c55d9e3", "ts": "2026-05-27T14:30", "project": "api-migration", "type": "waiting", "text": "v2 spec approval", "person": "Marco"}
+{"id": "d0091f4", "ts": "2026-05-27T09:15", "project": "onboarding", "type": "note", "text": "New hire Clara starts June 3, needs laptop provisioned"}
+{"id": "e7a15b6", "ts": "2026-05-26T11:00", "project": "billing-rewrite", "meeting": "architecture review", "type": "decision", "text": "Use event sourcing for the audit log"}
 ```
 
 ### Storage
@@ -90,7 +90,7 @@ These flags are available on most commands where they apply:
 
 ```
 --file <path>     Override default storage path (all commands)
---project <slug>  Scope to a single project (review, actions)
+--project <slug>  Scope to a single project
 ```
 
 ---
@@ -140,46 +140,32 @@ minutes add --project api-migration "* Drop v1 endpoints by Q3"
 
 ### `minutes logs`
 
-All entries grouped by project. Pass `--since` to restrict to a time window. Designed for update preparation.
+All entries shown chronologically, grouped into date buckets. Oldest entries appear at the top; the most recent bucket (Today) is at the bottom. Designed for update preparation.
 
 ```
 $ minutes logs
 
-All projects
+──────────────── This week ──────────────────
+2026-05-27 14:30  api-migration  decision  Drop support for v1 endpoints by end of Q3
+2026-05-27 14:30  api-migration  action    Write migration guide for downstream consumers [ ]  due 2026-05-30
+2026-05-27 14:30  api-migration  waiting   v2 spec approval  → Marco
 
-──────────── api-migration ────────────
-  2 decisions  ·  3 actions (1 open)  ·  1 waiting
+──────────────── Yesterday ──────────────────
+2026-05-29 09:15  onboarding     note      New hire Clara starts June 3, needs laptop provisioned
 
-──────────── onboarding ────────────
-  1 note  ·  2 actions (2 open)
+──────────────── Today ──────────────────────
+2026-05-30 11:00  billing-rewrite  decision  Use event sourcing for the audit log
 ```
 
-**With `--project`** — full detail for one project (depth view):
-
-```
-$ minutes logs --project api-migration
-
-api-migration
-
-──────────── api-migration ────────────
-  Decisions
-    Drop v1 endpoints by Q3
-    Delay confirmed with stakeholders
-
-  Actions
-    [x] Follow up with Sarah on budget
-    [ ] Write migration guide  due 2026-05-30
-
-  Waiting
-    v2 spec approval → Marco
-```
+Buckets (oldest first, empty buckets hidden): **Older → This year → This month → This week → Yesterday → Today**
 
 **Flags:**
 
 ```
---project <slug>          Scope to one project (depth view)
+--project <slug>          Filter to one project
 --since <value>           Restrict entries to a time window (optional)
 --open                    Show only open actions and waiting entries
+--all                     Show additional columns: meeting, tags, done timestamp
 ```
 
 **`--since` values:**

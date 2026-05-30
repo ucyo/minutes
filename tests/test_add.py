@@ -98,4 +98,4 @@ class TestParseLine:
     def test_id_is_four_chars(self):
         e = parse_line("a note")
         assert e is not None
-        assert len(e.id) == 4
+        assert len(e.id) == 7

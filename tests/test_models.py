@@ -36,7 +36,7 @@ def test_to_dict_includes_optional_when_set():
 
 
 def test_make_id_length():
-    assert len(Entry.make_id()) == 4
+    assert len(Entry.make_id()) == 7
 
 
 def test_make_id_unique():

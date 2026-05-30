@@ -13,6 +13,22 @@ console = Console()
 
 _DUE_SOON_DAYS = 2
 
+_BUCKET_ORDER = ["Older", "This year", "This month", "This week", "Yesterday", "Today"]
+
+
+def _date_bucket(entry_date: date, today: date) -> str:
+    if entry_date == today:
+        return "Today"
+    if entry_date == today - timedelta(days=1):
+        return "Yesterday"
+    if entry_date.isocalendar()[:2] == today.isocalendar()[:2]:
+        return "This week"
+    if entry_date.year == today.year and entry_date.month == today.month:
+        return "This month"
+    if entry_date.year == today.year:
+        return "This year"
+    return "Older"
+
 
 def _due_style(due_str: Optional[str]) -> str:
     if due_str is None:
@@ -83,6 +99,30 @@ def _build_meta(entry: Entry) -> tuple[Text, Text, Text]:
     return meeting, tags, updated
 
 
+def _make_table(show_all: bool) -> Table:
+    table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
+    table.add_column(no_wrap=True)   # timestamp
+    table.add_column(no_wrap=True)   # project
+    table.add_column(no_wrap=True)   # type label
+    table.add_column()               # content — wraps here
+    if show_all:
+        table.add_column(no_wrap=True)  # meeting
+        table.add_column(no_wrap=True)  # tags
+        table.add_column(no_wrap=True)  # updated_ts
+    return table
+
+
+def _add_row(table: Table, entry: Entry, show_all: bool) -> None:
+    ts = Text(entry.ts[:16].replace("T", " "), style="dim")
+    proj = Text(entry.project, style="cyan")
+    label, content = _build_parts(entry)
+    if show_all:
+        meeting, tags, updated = _build_meta(entry)
+        table.add_row(ts, proj, label, content, meeting, tags, updated)
+    else:
+        table.add_row(ts, proj, label, content)
+
+
 def render_logs(
     entries: list[Entry],
     since: Optional[date] = None,
@@ -93,25 +133,24 @@ def render_logs(
         console.print("[dim]No entries found.[/dim]")
         return
 
-    table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
-    table.add_column(no_wrap=True)   # timestamp
-    table.add_column(no_wrap=True)   # project
-    table.add_column(no_wrap=True)   # type label
-    table.add_column()               # content — wraps here
-    if show_all:
-        table.add_column(no_wrap=True)  # meeting
-        table.add_column(no_wrap=True)  # tags
-        table.add_column(no_wrap=True)  # updated_ts
+    today = date.today()
+    sorted_entries = sorted(entries, key=lambda e: e.ts)
 
-    for entry in sorted(entries, key=lambda e: e.ts):
-        ts = Text(entry.ts[:16].replace("T", " "), style="dim")
-        proj = Text(entry.project, style="cyan")
-        label, content = _build_parts(entry)
+    groups: dict[str, list[Entry]] = {b: [] for b in _BUCKET_ORDER}
+    for entry in sorted_entries:
+        bucket = _date_bucket(date.fromisoformat(entry.ts[:10]), today)
+        groups[bucket].append(entry)
 
-        if show_all:
-            meeting, tags, updated = _build_meta(entry)
-            table.add_row(ts, proj, label, content, meeting, tags, updated)
-        else:
-            table.add_row(ts, proj, label, content)
-
-    console.print(table)
+    first = True
+    for bucket in _BUCKET_ORDER:
+        bucket_entries = groups[bucket]
+        if not bucket_entries:
+            continue
+        if not first:
+            console.print()
+        console.rule(f"[dim]{bucket}[/dim]", style="dim")
+        table = _make_table(show_all)
+        for entry in bucket_entries:
+            _add_row(table, entry, show_all)
+        console.print(table)
+        first = False
