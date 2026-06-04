@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 
 from .add import parse_line, run_add
-from .display import render_logs
+from .browse import run_logs_interactive
 from .store import (
     DEFAULT_PATH,
     append_entry,
@@ -74,7 +74,7 @@ def logs(
     since_date = parse_since(since) if since else None
     entries = load_entries(file)
     filtered = filter_entries(entries, since=since_date, project=project, open_only=open_only)
-    render_logs(filtered, since_date, project=project, show_all=show_all)
+    run_logs_interactive(filtered, file, since=since_date, project=project, show_all=show_all)
 
 
 @app.command()
