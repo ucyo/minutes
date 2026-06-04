@@ -25,7 +25,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 from .add import _toolbar as _edit_toolbar, parse_line
 from .display import _BUCKET_ORDER, _date_bucket
 from .models import Entry, EntryStatus, EntryType
-from .store import append_entry
+from .store import append_entry, mark_done
 
 _PT_COLORS = {
     EntryType.DECISION: "ansiblue",
@@ -155,19 +155,34 @@ def run_logs_interactive(
 
     is_editing = Condition(lambda: bool(state["editing"]))
 
+    def _current_entry() -> Entry:
+        return state["entries"][state["cursor"]]
+
+    is_action = Condition(lambda: _current_entry().type == EntryType.ACTION)
+
     def get_content() -> list[tuple[str, str]]:
         return _build_display(state["entries"], state["cursor"], today)
 
     def get_toolbar() -> HTML:
         if state["editing"]:
             return _edit_toolbar()
-        return HTML(
+        parts = (
             "  <b>↑↓</b> navigate"
             "  │  "
             "<ansiyellow><b>↵</b></ansiyellow> edit"
-            "  │  "
-            "<ansiblue><b>q</b></ansiblue> quit"
         )
+        entry = _current_entry()
+        if entry.type == EntryType.ACTION:
+            s = entry.status
+            parts += "  │"
+            if s != EntryStatus.DONE:
+                parts += "  <ansigreen><b>d</b>/<b>x</b></ansigreen> done"
+            if s != EntryStatus.CANCELLED:
+                parts += "  <ansimagenta><b>c</b></ansimagenta> cancel"
+            if s in (EntryStatus.DONE, EntryStatus.CANCELLED):
+                parts += "  <ansicyan><b>o</b></ansicyan> reopen"
+        parts += "  │  <ansiblue><b>q</b></ansiblue> quit"
+        return HTML(parts)
 
     # --- edit overlay ---
 
@@ -220,6 +235,31 @@ def run_logs_interactive(
     @kb.add("c-c", filter=~is_editing)
     def _quit(event):
         event.app.exit()
+
+    @kb.add("d", filter=~is_editing & is_action)
+    @kb.add("x", filter=~is_editing & is_action)
+    def _mark_done(event):
+        entry = _current_entry()
+        if entry.status != EntryStatus.DONE:
+            updated = mark_done(entry.id, EntryStatus.DONE, store)
+            if updated:
+                state["entries"][state["cursor"]] = updated
+
+    @kb.add("c", filter=~is_editing & is_action)
+    def _mark_cancelled(event):
+        entry = _current_entry()
+        if entry.status != EntryStatus.CANCELLED:
+            updated = mark_done(entry.id, EntryStatus.CANCELLED, store)
+            if updated:
+                state["entries"][state["cursor"]] = updated
+
+    @kb.add("o", filter=~is_editing & is_action)
+    def _mark_open(event):
+        entry = _current_entry()
+        if entry.status != EntryStatus.OPEN:
+            updated = mark_done(entry.id, EntryStatus.OPEN, store)
+            if updated:
+                state["entries"][state["cursor"]] = updated
 
     @kb.add("escape", filter=has_focus(edit_area.buffer), eager=True)
     @kb.add("c-c", filter=has_focus(edit_area.buffer), eager=True)
