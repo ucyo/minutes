@@ -43,9 +43,16 @@ class TestDateBucket:
         # 2026-05-26 (Tue) is in ISO week 22, same as today but not today/yesterday
         assert _date_bucket(date(2026, 5, 26), self.TODAY) == "This week"
 
+    def test_last_week(self):
+        # 2026-05-20 (Wed) is in ISO week 21, the week before today's week 22
+        assert _date_bucket(date(2026, 5, 20), self.TODAY) == "Last week"
+
     def test_this_month(self):
-        # 2026-05-10 is in May but a different ISO week
+        # 2026-05-10 is in May but not in this week or last week
         assert _date_bucket(date(2026, 5, 10), self.TODAY) == "This month"
+
+    def test_last_month(self):
+        assert _date_bucket(date(2026, 4, 15), self.TODAY) == "Last month"
 
     def test_this_year(self):
         assert _date_bucket(date(2026, 2, 15), self.TODAY) == "This year"

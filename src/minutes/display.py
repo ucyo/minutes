@@ -13,7 +13,7 @@ console = Console()
 
 _DUE_SOON_DAYS = 2
 
-_BUCKET_ORDER = ["Older", "This year", "This month", "This week", "Yesterday", "Today"]
+_BUCKET_ORDER = ["Older", "This year", "Last month", "This month", "Last week", "This week", "Yesterday", "Today"]
 
 
 def _date_bucket(entry_date: date, today: date) -> str:
@@ -23,8 +23,13 @@ def _date_bucket(entry_date: date, today: date) -> str:
         return "Yesterday"
     if entry_date.isocalendar()[:2] == today.isocalendar()[:2]:
         return "This week"
+    if entry_date.isocalendar()[:2] == (today - timedelta(weeks=1)).isocalendar()[:2]:
+        return "Last week"
     if entry_date.year == today.year and entry_date.month == today.month:
         return "This month"
+    last_month = today.replace(day=1) - timedelta(days=1)
+    if entry_date.year == last_month.year and entry_date.month == last_month.month:
+        return "Last month"
     if entry_date.year == today.year:
         return "This year"
     return "Older"
