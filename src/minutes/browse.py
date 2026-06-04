@@ -151,7 +151,7 @@ def run_logs_interactive(
 
     today = date.today()
     sorted_entries = sorted(entries, key=lambda e: e.ts)
-    state: dict = {"cursor": 0, "entries": sorted_entries, "editing": False, "edit_entry": None}
+    state: dict = {"cursor": len(sorted_entries) - 1, "entries": sorted_entries, "editing": False, "edit_entry": None}
 
     is_editing = Condition(lambda: bool(state["editing"]))
 
