@@ -19,7 +19,7 @@ from .store import (
 )
 
 app = typer.Typer(
-    help="tgsa — project-centric meeting notes and task tracker",
+    help="minutes — project-centric meeting notes and task tracker",
     no_args_is_help=True,
 )
 console = Console()
