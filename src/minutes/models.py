@@ -33,6 +33,7 @@ class Entry:
     person: Optional[str] = None
     tags: list[str] = field(default_factory=list)
     updated_ts: Optional[str] = None
+    parent_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         d: dict = {
@@ -54,6 +55,8 @@ class Entry:
             d["tags"] = self.tags
         if self.updated_ts is not None:
             d["updated_ts"] = self.updated_ts
+        if self.parent_id is not None:
+            d["parent_id"] = self.parent_id
         return d
 
     @classmethod
@@ -70,6 +73,7 @@ class Entry:
             person=d.get("person"),
             tags=d.get("tags", []),
             updated_ts=d.get("updated_ts"),
+            parent_id=d.get("parent_id"),
         )
 
     @staticmethod

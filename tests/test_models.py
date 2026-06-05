@@ -22,6 +22,7 @@ def test_to_dict_omits_none_fields():
     assert "status" not in d
     assert "person" not in d
     assert "tags" not in d
+    assert "parent_id" not in d
 
 
 def test_to_dict_includes_optional_when_set():
@@ -33,6 +34,17 @@ def test_to_dict_includes_optional_when_set():
     d = e.to_dict()
     assert d["person"] == "Marco"
     assert d["meeting"] == "team sync"
+
+
+def test_parent_id_roundtrip():
+    e = Entry(
+        id="abc1234", ts="2026-06-04T10:00", project="p",
+        type=EntryType.ACTION, text="follow-up task",
+        status=EntryStatus.OPEN, parent_id="xyz5678",
+    )
+    d = e.to_dict()
+    assert d["parent_id"] == "xyz5678"
+    assert Entry.from_dict(d).parent_id == "xyz5678"
 
 
 def test_make_id_length():

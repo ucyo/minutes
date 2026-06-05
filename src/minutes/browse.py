@@ -68,6 +68,8 @@ def _build_display(
 ) -> list[tuple[str, str]]:
     from collections import defaultdict
 
+    entry_by_id = {e.id: e for e in entries}
+
     groups: dict[str, list[tuple[int, Entry]]] = defaultdict(list)
     for i, entry in enumerate(entries):
         bucket = _date_bucket(date.fromisoformat(entry.ts[:10]), today)
@@ -126,6 +128,12 @@ def _build_display(
             if entry.type == EntryType.WAITING and entry.person:
                 lines.append((bg + "ansimagenta", f"  → {entry.person}"))
 
+            if entry.parent_id:
+                parent = entry_by_id.get(entry.parent_id)
+                ref = parent.text[:60] if parent else entry.parent_id
+                lines.append(("", "\n"))
+                lines.append((bg + "#555555", f"     ↳ {ref}"))
+
             lines.append(("", "\n"))
 
     return lines
@@ -151,7 +159,7 @@ def run_logs_interactive(
 
     today = date.today()
     sorted_entries = sorted(entries, key=lambda e: e.ts)
-    state: dict = {"cursor": len(sorted_entries) - 1, "entries": sorted_entries, "editing": False, "edit_entry": None}
+    state: dict = {"cursor": len(sorted_entries) - 1, "entries": sorted_entries, "editing": False, "follow_up": False, "edit_entry": None}
 
     is_editing = Condition(lambda: bool(state["editing"]))
 
@@ -181,7 +189,12 @@ def run_logs_interactive(
                 parts += "  <ansimagenta><b>c</b></ansimagenta> cancel"
             if s in (EntryStatus.DONE, EntryStatus.CANCELLED):
                 parts += "  <ansicyan><b>o</b></ansicyan> reopen"
-        parts += "  │  <ansiblue><b>q</b></ansiblue> quit"
+        parts += (
+            "  │  "
+            "<b>f</b> follow-up"
+            "  │  "
+            "<ansiblue><b>q</b></ansiblue> quit"
+        )
         return HTML(parts)
 
     # --- edit overlay ---
@@ -196,7 +209,7 @@ def run_logs_interactive(
 
     edit_overlay = ConditionalContainer(
         content=Frame(
-            title="Edit  Enter:save  Esc:cancel",
+            title=lambda: "Follow-up  Enter:save  Esc:cancel" if state["follow_up"] else "Edit  Enter:save  Esc:cancel",
             body=edit_body,
             style="",
         ),
@@ -241,47 +254,67 @@ def run_logs_interactive(
     def _mark_done(event):
         entry = _current_entry()
         if entry.status != EntryStatus.DONE:
-            updated = mark_done(entry.id, EntryStatus.DONE, store)
-            if updated:
-                state["entries"][state["cursor"]] = updated
+            mark_done(entry.id, EntryStatus.DONE, store)
+            entry.status = EntryStatus.DONE
+            entry.updated_ts = Entry.now_ts()
 
     @kb.add("c", filter=~is_editing & is_action)
     def _mark_cancelled(event):
         entry = _current_entry()
         if entry.status != EntryStatus.CANCELLED:
-            updated = mark_done(entry.id, EntryStatus.CANCELLED, store)
-            if updated:
-                state["entries"][state["cursor"]] = updated
+            mark_done(entry.id, EntryStatus.CANCELLED, store)
+            entry.status = EntryStatus.CANCELLED
+            entry.updated_ts = Entry.now_ts()
 
     @kb.add("o", filter=~is_editing & is_action)
     def _mark_open(event):
         entry = _current_entry()
         if entry.status != EntryStatus.OPEN:
-            updated = mark_done(entry.id, EntryStatus.OPEN, store)
-            if updated:
-                state["entries"][state["cursor"]] = updated
+            mark_done(entry.id, EntryStatus.OPEN, store)
+            entry.status = EntryStatus.OPEN
+            entry.updated_ts = None
+
+    @kb.add("f", filter=~is_editing)
+    def _follow_up(event):
+        parent = _current_entry()
+        state["editing"] = True
+        state["follow_up"] = True
+        state["edit_entry"] = parent
+        edit_area.text = "! "
+        edit_area.buffer.cursor_position = len(edit_area.text)
+        event.app.layout.focus(edit_area.window)
 
     @kb.add("escape", filter=has_focus(edit_area.buffer), eager=True)
     @kb.add("c-c", filter=has_focus(edit_area.buffer), eager=True)
     def _cancel(event):
         state["editing"] = False
+        state["follow_up"] = False
         event.app.layout.focus(main_window)
 
     @kb.add("enter", filter=has_focus(edit_area.buffer), eager=True)
     def _confirm(event):
         raw = edit_area.text.strip()
+        follow_up = state["follow_up"]
         state["editing"] = False
+        state["follow_up"] = False
         if raw and state["edit_entry"]:
-            entry = state["edit_entry"]
+            parent = state["edit_entry"]
             new_entry = parse_line(raw)
             if new_entry:
-                new_entry.id = entry.id
-                new_entry.ts = entry.ts
-                new_entry.project = entry.project
-                new_entry.meeting = entry.meeting
-                new_entry.tags = entry.tags
-                append_entry(new_entry, store)
-                state["entries"][state["cursor"]] = new_entry
+                new_entry.project = parent.project
+                new_entry.meeting = parent.meeting
+                if follow_up:
+                    new_entry.parent_id = parent.id
+                    append_entry(new_entry, store)
+                    state["entries"].append(new_entry)
+                    state["cursor"] = len(state["entries"]) - 1
+                else:
+                    new_entry.id = parent.id
+                    new_entry.ts = parent.ts
+                    new_entry.tags = parent.tags
+                    new_entry.parent_id = parent.parent_id
+                    append_entry(new_entry, store)
+                    state["entries"][state["cursor"]] = new_entry
         event.app.layout.focus(main_window)
 
     layout = Layout(
