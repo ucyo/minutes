@@ -65,6 +65,7 @@ def _build_display(
     entries: list[Entry],
     cursor: int,
     today: date,
+    highlight_id: Optional[str] = None,
 ) -> list[tuple[str, str]]:
     from collections import defaultdict
 
@@ -100,7 +101,13 @@ def _build_display(
             if sel:
                 lines.append(("[SetCursorPosition]", ""))
 
-            bg = "bg:#1e3a5f " if sel else _ALT_BG[group_idx % 2]
+            is_parent = highlight_id is not None and entry.id == highlight_id
+            bg = (
+                "bg:#1e3a5f " if sel
+                else "bg:#26301e " if is_parent
+                else _ALT_BG[group_idx % 2]
+            )
+            marker_override = "↑" if is_parent and not sel else None
             color = _PT_COLORS[entry.type]
             label = entry.type.value
 
@@ -116,7 +123,7 @@ def _build_display(
                     checkbox = " [ ]"
 
             ts = entry.ts[:16].replace("T", " ")
-            marker = ">" if sel else " "
+            marker = ">" if sel else (marker_override or " ")
 
             has_due = (
                 entry.type == EntryType.ACTION
@@ -142,9 +149,11 @@ def _build_display(
             text_full = f"{entry.text}{checkbox}"
             chunks = [text_full[i:i + text_avail] for i in range(0, max(len(text_full), 1), text_avail)]
 
+            proj_sep = "● " if is_parent and not sel else "  "
             lines += [
                 (bg + "#888888", f"  {marker} {ts}  "),
-                (bg + "ansicyan", f"{entry.project:<12}  "),
+                (bg + "ansicyan", f"{entry.project:<12}"),
+                (bg + "ansiyellow", proj_sep),
                 (bg + color, f"{label:<9}  "),
                 (bg + color, chunks[0]),
             ]
@@ -167,15 +176,6 @@ def _build_display(
                 last_len += len(person_str)
 
             lines.append(_fill(last_len))
-
-            if entry.parent_id:
-                parent = entry_by_id.get(entry.parent_id)
-                ref = parent.text[:60] if parent else entry.parent_id
-                ref_text = f"     ↳ {ref}"
-                lines.append(("", "\n"))
-                lines.append((bg + "#555555", ref_text))
-                lines.append(_fill(len(ref_text)))
-
             lines.append(("", "\n"))
 
     return lines
@@ -219,7 +219,8 @@ def run_logs_interactive(
     is_action = Condition(lambda: _current_entry().type == EntryType.ACTION)
 
     def get_content() -> list[tuple[str, str]]:
-        return _build_display(state["entries"], state["cursor"], today)
+        cur = state["entries"][state["cursor"]]
+        return _build_display(state["entries"], state["cursor"], today, highlight_id=cur.parent_id)
 
     def get_toolbar() -> HTML:
         if state["editing"]:
