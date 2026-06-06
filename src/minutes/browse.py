@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional
 
-from prompt_toolkit.application import Application
+from prompt_toolkit.application import Application, get_app
 from prompt_toolkit.filters import Condition, has_focus
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings
@@ -89,12 +89,18 @@ def _build_display(
 
         lines.append(("#888888", f"  {bucket_name}\n"))
 
+        prev_project: Optional[str] = None
+        group_idx = 0
+        _ALT_BG = ("", "bg:#252525 ")
         for entry_idx, entry in items:
+            if prev_project is not None and entry.project != prev_project:
+                group_idx += 1
+            prev_project = entry.project
             sel = entry_idx == cursor
             if sel:
                 lines.append(("[SetCursorPosition]", ""))
 
-            bg = "bg:#1e3a5f " if sel else ""
+            bg = "bg:#1e3a5f " if sel else _ALT_BG[group_idx % 2]
             color = _PT_COLORS[entry.type]
             label = entry.type.value
 
@@ -112,27 +118,63 @@ def _build_display(
             ts = entry.ts[:16].replace("T", " ")
             marker = ">" if sel else " "
 
+            has_due = (
+                entry.type == EntryType.ACTION
+                and entry.due
+                and entry.status not in (EntryStatus.DONE, EntryStatus.CANCELLED)
+            )
+            has_person = entry.type == EntryType.WAITING and entry.person
+
+            term_width = get_app().output.get_size().columns
+            # prefix: "  {marker} {ts}  " (22) + project (14) + label (11) = 47
+            PREFIX = 47
+            text_avail = max(1, term_width - PREFIX)
+
+            def _fill(used: int) -> tuple[str, str]:
+                return (bg, " " * ((-used) % term_width))
+
+            def _sub_line(text: str, color_: str) -> None:
+                lines.append(("", "\n"))
+                lines.append((bg, " " * PREFIX))
+                lines.append((bg + color_, text))
+                lines.append(_fill(PREFIX + len(text)))
+
+            text_full = f"{entry.text}{checkbox}"
+            chunks = [text_full[i:i + text_avail] for i in range(0, max(len(text_full), 1), text_avail)]
+
             lines += [
                 (bg + "#888888", f"  {marker} {ts}  "),
                 (bg + "ansicyan", f"{entry.project:<12}  "),
                 (bg + color, f"{label:<9}  "),
-                (bg + color, f"{entry.text}{checkbox}"),
+                (bg + color, chunks[0]),
             ]
+            last_len = PREFIX + len(chunks[0])
 
-            if (
-                entry.type == EntryType.ACTION
-                and entry.due
-                and entry.status not in (EntryStatus.DONE, EntryStatus.CANCELLED)
-            ):
-                lines.append((bg + "#888888", f"  due {entry.due}"))
-            if entry.type == EntryType.WAITING and entry.person:
-                lines.append((bg + "ansimagenta", f"  → {entry.person}"))
+            for chunk in chunks[1:]:
+                lines.append(_fill(last_len))
+                lines.append(("", "\n"))
+                lines.append((bg, " " * PREFIX))
+                lines.append((bg + color, chunk))
+                last_len = PREFIX + len(chunk)
+
+            if has_due:
+                due_str = f"  due {entry.due}"
+                lines.append((bg + "#888888", due_str))
+                last_len += len(due_str)
+            if has_person:
+                person_str = f"  → {entry.person}"
+                lines.append((bg + "ansimagenta", person_str))
+                last_len += len(person_str)
+
+            lines.append(_fill(last_len))
 
             if entry.parent_id:
                 parent = entry_by_id.get(entry.parent_id)
                 ref = parent.text[:60] if parent else entry.parent_id
+                ref_text = f"     ↳ {ref}"
                 lines.append(("", "\n"))
-                lines.append((bg + "#555555", f"     ↳ {ref}"))
+                lines.append((bg + "#555555", ref_text))
+                lines.append(_fill(len(ref_text)))
 
             lines.append(("", "\n"))
 
