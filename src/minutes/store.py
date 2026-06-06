@@ -86,6 +86,25 @@ def filter_entries(
     return result
 
 
+def delete_entry(entry_id: str, store: Optional[Path] = None) -> None:
+    """Rewrite the store, dropping every line whose id matches entry_id."""
+    path = get_store_path(store)
+    if not path.exists():
+        return
+    lines = path.read_text().splitlines()
+    kept: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        try:
+            if json.loads(stripped).get("id") != entry_id:
+                kept.append(stripped)
+        except (json.JSONDecodeError, KeyError):
+            kept.append(stripped)
+    path.write_text("\n".join(kept) + ("\n" if kept else ""))
+
+
 def mark_done(
     entry_id: str,
     status: EntryStatus = EntryStatus.DONE,
