@@ -42,7 +42,7 @@ def captured(monkeypatch):
 class TestInlineAdd:
     def test_saves_entry_to_store(self, tmp_path):
         store = tmp_path / "entries.jsonl"
-        result = runner.invoke(app, ["add", "--project", "proj", "--file", str(store), "just a note"])
+        result = runner.invoke(app, ["logs", "--add", "just a note", "--project", "proj", "--file", str(store)])
         assert result.exit_code == 0
         data = json.loads(store.read_text().strip())
         assert data["text"] == "just a note"
@@ -50,22 +50,22 @@ class TestInlineAdd:
 
     def test_saves_action_type(self, tmp_path):
         store = tmp_path / "entries.jsonl"
-        runner.invoke(app, ["add", "--project", "proj", "--file", str(store), "! do the thing"])
+        runner.invoke(app, ["logs", "--add", "! do the thing", "--project", "proj", "--file", str(store)])
         assert json.loads(store.read_text().strip())["type"] == "action"
 
     def test_saves_decision_type(self, tmp_path):
         store = tmp_path / "entries.jsonl"
-        runner.invoke(app, ["add", "--project", "proj", "--file", str(store), "* a decision"])
+        runner.invoke(app, ["logs", "--add", "* a decision", "--project", "proj", "--file", str(store)])
         assert json.loads(store.read_text().strip())["type"] == "decision"
 
     def test_saves_waiting_type(self, tmp_path):
         store = tmp_path / "entries.jsonl"
-        runner.invoke(app, ["add", "--project", "proj", "--file", str(store), "> waiting on Marco"])
+        runner.invoke(app, ["logs", "--add", "> waiting on Marco", "--project", "proj", "--file", str(store)])
         assert json.loads(store.read_text().strip())["type"] == "waiting"
 
     def test_missing_project_exits_nonzero(self, tmp_path):
         store = tmp_path / "entries.jsonl"
-        result = runner.invoke(app, ["add", "--file", str(store), "just a note"])
+        result = runner.invoke(app, ["logs", "--add", "just a note", "--file", str(store)])
         assert result.exit_code != 0
 
 

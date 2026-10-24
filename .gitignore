@@ -6,3 +6,4 @@ dist/
 .eggs/
 .env
 .pypirc
+.DS_Store

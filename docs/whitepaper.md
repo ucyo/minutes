@@ -95,37 +95,27 @@ These flags are available on most commands where they apply:
 
 ---
 
-### `minutes add`
+### Adding entries (from `logs`)
 
-Interactively add one or more entries after a meeting.
-
-```
-$ minutes add
-Project: api[↵]          ← fuzzy autocomplete from existing projects
-  → api-migration
-  → api-gateway
-
-Meeting (optional): team sync
-
-→ * Drop v1 endpoints by Q3
-→ ! Write migration guide @fri
-→ > v2 spec from Marco
-→ just a note here
-→
-```
-
-The bottom toolbar remains visible while typing entries:
+Entries are added from the interactive `logs` browser by pressing `a`, which opens
+an add form. The project is prefilled from the currently selected entry (or locked
+to the `--project` flag when given). Type one entry per line:
 
 ```
-Prefixes:  * decision  ! action  > waiting  (none) note  │  Date: @fri  @7  @2026-05-30  │  Empty line or Ctrl+D to finish
+*  decision     → * Drop v1 endpoints by Q3
+!  action       → ! Write migration guide @fri
+>  waiting      → > Spec approval from Marco
+   note         → Just a note, no prefix needed
 ```
 
-Each entry is written to disk immediately after pressing Enter — a crash mid-session loses at most the line currently being typed.
+Press Enter to save each entry; an empty entry line closes the form. Each entry is
+written to disk immediately after pressing Enter — a crash mid-session loses at most
+the line currently being typed.
 
 **Inline variant** (no interactive prompt):
 
 ```bash
-minutes add --project api-migration "* Drop v1 endpoints by Q3"
+minutes logs --add "* Drop v1 endpoints by Q3" --project api-migration
 ```
 
 **Date shorthand in `@` suffix:**
@@ -162,10 +152,11 @@ Buckets (oldest first, empty buckets hidden): **Older → This year → This mon
 **Flags:**
 
 ```
---project <slug>          Filter to one project
+--project <slug>          Filter to one project (also locks the add form's project)
 --since <value>           Restrict entries to a time window (optional)
 --open                    Show only open actions and waiting entries
 --all                     Show additional columns: meeting, tags, done timestamp
+--add <text>              Add an entry inline (requires --project) and exit
 ```
 
 **`--since` values:**
@@ -200,11 +191,11 @@ When `--since` is omitted, all entries are shown.
 ### After a meeting
 
 1. Open terminal
-2. `minutes add`
-3. Enter project name — autocomplete suggests existing slugs
-4. Enter optional meeting name
+2. `minutes logs`
+3. Press `a` to open the add form
+4. Confirm/adjust the project (prefilled from selection) and optional meeting
 5. Transcribe action items, decisions, and notes from paper using prefixes
-6. Empty line or Ctrl+D to finish — takes under 2 minutes
+6. Empty entry line closes the form — takes under 2 minutes
 
 ### Before a team lead update
 
@@ -255,8 +246,9 @@ minutes/
         ├── cli.py        # Typer commands and routing
         ├── models.py     # Entry dataclass, type enums, serialization
         ├── store.py      # JSONL read/write, filtering, querying
-        ├── add.py        # prompt_toolkit interactive add flow
-        └── display.py    # Rich rendering for all output commands
+        ├── add.py        # entry line parsing and prefix help toolbar
+        ├── browse.py     # prompt_toolkit interactive log browser
+        └── display.py    # Rich rendering for non-interactive output
 ```
 
 ## 9. Dependencies

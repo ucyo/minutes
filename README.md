@@ -15,10 +15,10 @@ pip install -e .
 **Add entries after a meeting:**
 
 ```bash
-minutes add
+minutes logs
 ```
 
-You will be prompted for a project name (with autocomplete) and an optional meeting name. Then enter entries one per line:
+Press `a` to open the add form. The project is prefilled from the selected entry (or locked to `--project` when given). Then enter entries one per line:
 
 ```
 *  decision     → * Drop v1 endpoints by Q3
@@ -27,7 +27,13 @@ You will be prompted for a project name (with autocomplete) and an optional meet
    note         → Just a note, no prefix needed
 ```
 
-Press Enter on an empty line or Ctrl+D to finish. Each entry is saved immediately.
+Press Enter to save each entry; an empty entry line closes the form. Each entry is saved immediately.
+
+For one-off entries from scripts, add inline:
+
+```bash
+minutes logs --add "Write migration guide @fri" --project api-migration
+```
 
 **Enable shell completion (once):**
 
@@ -35,7 +41,7 @@ Press Enter on an empty line or Ctrl+D to finish. Each entry is saved immediatel
 minutes --install-completion
 ```
 
-After restarting your shell, `minutes logs -p <TAB>` and `minutes add -p <TAB>` will autocomplete project names from your store.
+After restarting your shell, `minutes logs -p <TAB>` will autocomplete project names from your store.
 
 **Browse entries:**
 

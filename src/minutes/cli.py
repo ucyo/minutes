@@ -7,7 +7,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
-from .add import parse_line, run_add
+from .add import parse_line
 from .browse import run_logs_interactive
 from .store import (
     DEFAULT_PATH,
@@ -33,32 +33,6 @@ def _complete_project(incomplete: str) -> list[str]:
 
 
 @app.command()
-def add(
-    text: Optional[str] = typer.Argument(None, help="Inline entry (skips interactive mode)"),
-    project: Optional[str] = typer.Option(
-        None, "--project", "-p",
-        help="Project slug",
-        autocompletion=_complete_project,
-    ),
-    file: Optional[Path] = typer.Option(None, "--file", help="Override store path"),
-) -> None:
-    """Add entries for a project interactively, or inline with --project."""
-    if text is not None and project is not None:
-        entry = parse_line(text)
-        if entry is None:
-            console.print("[red]Could not parse entry.[/red]")
-            raise typer.Exit(1)
-        entry.project = project
-        append_entry(entry, file)
-        console.print("[green]Saved.[/green]")
-    else:
-        if text is not None and project is None:
-            console.print("[red]Inline mode requires --project.[/red]")
-            raise typer.Exit(1)
-        run_add(file, project=project)
-
-
-@app.command()
 def logs(
     project: Optional[str] = typer.Option(
         None, "--project", "-p",
@@ -68,9 +42,26 @@ def logs(
     since: Optional[str] = typer.Option(None, "--since", help="Restrict to entries since: 'mon', integer days back, or YYYY-MM-DD"),
     open_only: bool = typer.Option(False, "--open", help="Show only open actions and waiting entries"),
     show_all: bool = typer.Option(False, "--all", help="Show all fields: meeting, tags, done timestamp"),
+    add_text: Optional[str] = typer.Option(
+        None, "--add",
+        help="Add an entry inline (requires --project) and exit",
+    ),
     file: Optional[Path] = typer.Option(None, "--file"),
 ) -> None:
-    """Show entries chronologically. All entries by default, restrict with --since."""
+    """Browse entries interactively, or add an entry inline with --add."""
+    if add_text is not None:
+        if project is None:
+            console.print("[red]Inline add requires --project.[/red]")
+            raise typer.Exit(1)
+        entry = parse_line(add_text)
+        if entry is None:
+            console.print("[red]Could not parse entry.[/red]")
+            raise typer.Exit(1)
+        entry.project = project
+        append_entry(entry, file)
+        console.print("[green]Saved.[/green]")
+        return
+
     since_date = parse_since(since) if since else None
     entries = load_entries(file)
     filtered = filter_entries(entries, since=since_date, project=project, open_only=open_only)
