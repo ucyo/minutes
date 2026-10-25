@@ -82,7 +82,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 .entry.cancelled .badge.action { color: var(--dim); }
 .body { flex: 1 1 auto; min-width: 0; }
 .text { overflow-wrap: anywhere; }
-.entry.done .text { color: var(--green); text-decoration: line-through; }
+.entry.done .text { color: var(--green); }
 .entry.cancelled .text { color: var(--dim); }
 .cb { margin-left: 6px; }
 .cb.done { color: var(--green); }
