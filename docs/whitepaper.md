@@ -34,6 +34,10 @@ Input happens asynchronously (after meetings, transcribed from paper). Retrieval
 
 Projects are free-form strings. There is no project registry — a project comes into existence the first time it is referenced in an entry. Project names should be lowercase, hyphenated slugs (`api-migration`, `q3-hiring`).
 
+### Follow-ups
+
+An entry can link to a parent via `parent_id`, forming a one-level "follow-up" relationship. Creating a follow-up from an entry (key `f` in the browser, or the `⤴` button in the web UI) adds a new entry whose `parent_id` points at the original, so related work stays traceable while the parent's history is unchanged.
+
 ---
 
 ## 3. JSONL Schema
@@ -60,6 +64,7 @@ Each line in the JSONL file is a self-contained JSON object. Fields:
 | `person` | string | `waiting` | Who you are waiting on |
 | `tags` | array of strings | all | Free-form labels, e.g. `["urgent", "infra"]` |
 | `updated_ts` | string | `action` | Timestamp of last status change |
+| `parent_id` | string | all | `id` of the entry this one follows up (links a follow-up action to its parent) |
 
 ### Example entries
 
@@ -78,7 +83,7 @@ Each line in the JSONL file is a self-contained JSON object. Fields:
     entries.jsonl       # all entries, append-only
 ```
 
-The file is append-only. Status updates (e.g. marking an action done) write a new entry with the same `id` and updated `status` and `updated_ts` fields. The last entry for a given `id` is the canonical state. This preserves full history without in-place mutation.
+The file is append-only. Status updates (e.g. marking an action done), edits, and follow-ups write a new entry with the same `id` and updated fields. The last entry for a given `id` is the canonical state. This preserves full history without in-place mutation. Deletion is the one exception: `delete` rewrites the file, dropping every line whose `id` matches.
 
 ---
 
@@ -86,11 +91,11 @@ The file is append-only. Status updates (e.g. marking an action done) write a ne
 
 ### Common flags
 
-These flags are available on most commands where they apply:
+These flags are available on the commands where they apply:
 
 ```
---file <path>     Override default storage path (all commands)
---project <slug>  Scope to a single project
+--file <path>     Override default storage path (`logs`, `info`)
+--project <slug>  Scope to a single project (`logs`)
 ```
 
 ---
@@ -98,8 +103,9 @@ These flags are available on most commands where they apply:
 ### Adding entries (from `logs`)
 
 Entries are added from the interactive `logs` browser by pressing `a`, which opens
-an add form. The project is prefilled from the currently selected entry (or locked
-to the `--project` flag when given). Type one entry per line:
+an add form with three fields: **Project** (prefilled from the currently selected
+entry, or locked when `--project` is given), **Meeting** (optional), and **Entry**.
+Use `Tab` / `Shift+Tab` to move between fields. Type one entry per line:
 
 ```
 *  decision     → * Drop v1 endpoints by Q3
@@ -110,7 +116,8 @@ to the `--project` flag when given). Type one entry per line:
 
 Press Enter to save each entry; an empty entry line closes the form. Each entry is
 written to disk immediately after pressing Enter — a crash mid-session loses at most
-the line currently being typed.
+the line currently being typed. The `meeting` value applies to every entry added
+during the session.
 
 **Inline variant** (no interactive prompt):
 
@@ -136,18 +143,20 @@ All entries shown chronologically, grouped into date buckets. Oldest entries app
 $ minutes logs
 
 ──────────────── This week ──────────────────
-2026-05-27 14:30  api-migration  decision  Drop support for v1 endpoints by end of Q3
-2026-05-27 14:30  api-migration  action    Write migration guide for downstream consumers [ ]  due 2026-05-30
-2026-05-27 14:30  api-migration  waiting   v2 spec approval  → Marco
+Wed 14:30  api-migration  decision  Drop support for v1 endpoints by end of Q3
+Wed 14:30  api-migration  action    Write migration guide for downstream consumers [ ]  due 2026-05-30
+Wed 14:30  api-migration  waiting   v2 spec approval  → Marco
 
 ──────────────── Yesterday ──────────────────
-2026-05-29 09:15  onboarding     note      New hire Clara starts June 3, needs laptop provisioned
+09:15  onboarding     note      New hire Clara starts June 3, needs laptop provisioned
 
 ──────────────── Today ──────────────────────
-2026-05-30 11:00  billing-rewrite  decision  Use event sourcing for the audit log
+11:00  billing-rewrite  decision  Use event sourcing for the audit log
 ```
 
-Buckets (oldest first, empty buckets hidden): **Older → This year → This month → This week → Yesterday → Today**
+Buckets (oldest first, empty buckets hidden): **Older → This year → Last month → This month → Last week → This week → Yesterday → Today**
+
+Timestamps are rendered at the bucket's granularity: Today/Yesterday show `HH:MM`, This week/Last week show `Wed 14:30`, and older buckets show `YYYY-MM-DD`.
 
 **Flags:**
 
@@ -157,6 +166,9 @@ Buckets (oldest first, empty buckets hidden): **Older → This year → This mon
 --open                    Show only open actions and waiting entries
 --all                     Show additional columns: meeting, tags, done timestamp
 --add <text>              Add an entry inline (requires --project) and exit
+--web                     Serve entries in a local web UI instead of the TUI
+--port <n>                Port for the web UI (only with --web, default 8123)
+--no-open                 Do not open the browser when --web starts
 ```
 
 **`--since` values:**
@@ -169,6 +181,52 @@ Buckets (oldest first, empty buckets hidden): **Older → This year → This mon
 
 When `--since` is omitted, all entries are shown.
 
+### Interactive keybindings
+
+While browsing, the following keys are available:
+
+| Key | Action |
+|---|---|
+| `↑` / `↓` | Move the selection |
+| `Enter` | Edit the selected entry (rewrites via append) |
+| `a` | Open the add form |
+| `x` | Mark the selected action done |
+| `c` | Cancel the selected action |
+| `o` | Reopen a done/cancelled action |
+| `f` | Create a follow-up action linked to the selected entry |
+| `d` | Delete the selected entry (confirmation required) |
+| `q` / `Ctrl-C` | Quit |
+
+Edit, status changes, and follow-ups are all append-only writes. Follow-ups are
+created with `parent_id` set to the selected entry; when a follow-up is selected,
+its parent is highlighted in the list.
+
+### Web UI
+
+```bash
+minutes logs --web
+```
+
+Serves the same browse, add, edit, follow-up, and delete flow as a self-contained
+local web page at `http://127.0.0.1:8123` and opens the browser automatically.
+`--port` picks another port, `--no-open` skips opening the browser, and `--file`
+points at a different store. Initial filters pass through the URL query string:
+
+```bash
+minutes logs --web --project api-migration --since mon --open
+```
+
+The web UI adds a newest-first ordering toggle, a date picker for action due dates,
+and type-specific add fields. It has no build step and no external assets.
+
+### `minutes info`
+
+```bash
+minutes info
+```
+
+Prints the package version, store path, and entry count.
+
 ---
 
 ## 5. Color Scheme
@@ -177,8 +235,9 @@ When `--since` is omitted, all entries are shown.
 |---|---|
 | Project name | Bold cyan |
 | `decision` | Blue |
-| `action` open | Yellow |
-| `action` done | Green + strikethrough |
+| `action` open | Yellow, `[ ]` |
+| `action` done | Green, `[x]` (strikethrough in table output) |
+| `action` cancelled | Dim, `[-]` |
 | `waiting` | Magenta |
 | `note` | Dim/default |
 | Overdue | Red |
@@ -193,7 +252,7 @@ When `--since` is omitted, all entries are shown.
 1. Open terminal
 2. `minutes logs`
 3. Press `a` to open the add form
-4. Confirm/adjust the project (prefilled from selection) and optional meeting
+4. Confirm/adjust the project (prefilled from selection) and optional meeting, then `Tab` to the entry field
 5. Transcribe action items, decisions, and notes from paper using prefixes
 6. Empty entry line closes the form — takes under 2 minutes
 
@@ -207,22 +266,29 @@ When `--since` is omitted, all entries are shown.
 1. `minutes logs --project <slug> --since mon`
 2. Use output as the agenda
 
+### In a browser
+
+1. `minutes logs --web`
+2. Filter, add, edit, and mark actions from the browser at `http://127.0.0.1:8123`
+
 ### Daily check
 
 1. `minutes logs --open`
-2. Work through open actions and waiting entries interactively
+2. Work through open actions and waiting entries interactively — `x` to mark done, `c` to cancel, `o` to reopen, `f` to add a follow-up, `d` to delete
 
 ---
 
 ## 7. Design Decisions
 
-**Append-only writes.** The JSONL file is never mutated in place. Updates (marking done, correcting text) append a new record. The last record for a given `id` is canonical. This makes the file safe to sync via Dropbox or git, easy to back up, and fully auditable.
+**Append-only writes.** The JSONL file is never mutated in place except for deletion. Updates (marking done, correcting text, adding follow-ups) append a new record; the last record for a given `id` is canonical. Deleting an entry rewrites the file to drop that `id`. Append-on-update makes the file safe to sync via Dropbox or git, easy to back up, and fully auditable.
 
 **Write-on-enter.** Each entry is written to disk the moment the user presses Enter, not when the session ends. A crash loses at most the line currently being typed.
 
 **No project registry.** Projects are inferred from entries. This removes a setup step and allows projects to be created mid-session without interrupting the capture flow.
 
-**Two prompt sessions.** The interactive add flow uses separate `PromptSession` instances for project entry (with fuzzy autocomplete) and for the entry loop (no completer). This prevents the completer from leaking into note input.
+**One application, scoped completion.** The interactive browser is a single `prompt_toolkit` Application with overlay `TextArea` widgets for the add and edit forms. Only the project field gets a fuzzy autocomplete completer, so the completer never leaks into note or entry text.
+
+**Self-contained web UI.** `logs --web` reuses the same store, parsing, and querying code behind a tiny JSON API built on the standard library's `http.server`. The single page ships inline with no build step or external assets, keeping deployment to `pipx install` plus a browser.
 
 **Pull-based retrieval.** No scheduled notifications or reminders. The tool assumes the user already has meeting cadence and knows when to check. Adding push behavior creates noise; the value is in fast retrieval when it matters.
 
@@ -245,10 +311,14 @@ minutes/
         ├── __init__.py
         ├── cli.py        # Typer commands and routing
         ├── models.py     # Entry dataclass, type enums, serialization
-        ├── store.py      # JSONL read/write, filtering, querying
+        ├── store.py      # JSONL read/write, filtering, querying, deletion
         ├── add.py        # entry line parsing and prefix help toolbar
         ├── browse.py     # prompt_toolkit interactive log browser
-        └── display.py    # Rich rendering for non-interactive output
+        ├── display.py    # Rich rendering for non-interactive output
+        └── web/
+            ├── __init__.py
+            ├── server.py   # stdlib HTTP server + JSON API over the store
+            └── page.py     # self-contained single-page web UI
 ```
 
 ## 9. Dependencies
@@ -257,5 +327,5 @@ minutes/
 |---|---|
 | `typer` | CLI command definitions |
 | `rich` | Colored terminal output |
-| `prompt_toolkit` | Interactive add flow with autocomplete |
+| `prompt_toolkit` | Interactive browser and add/edit forms with autocomplete |
 | `pytest` | Test runner (dev only) |
