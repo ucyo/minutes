@@ -55,7 +55,8 @@ button { cursor: pointer; }
 button:hover { border-color: var(--cyan); }
 main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 .add { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px; }
-.add form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.add form { display: flex; flex-direction: column; gap: 8px; }
+.add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 #add-text { flex: 1 1 320px; min-width: 220px; }
 .bucket {
   color: var(--dim); font-size: 12px; text-transform: uppercase;
@@ -125,18 +126,22 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 <main>
   <section class="add">
     <form id="add-form" autocomplete="off">
-      <input id="add-project" list="projects" placeholder="project" required>
-      <input id="add-meeting" placeholder="meeting (optional)">
-      <select id="add-type" title="Type">
-        <option value="note">note</option>
-        <option value="decision">decision</option>
-        <option value="action">action</option>
-        <option value="waiting">waiting</option>
-      </select>
-      <input id="add-due" placeholder="due: fri / 7 / 2026-05-30" hidden>
-      <input id="add-person" placeholder="person" hidden>
-      <input id="add-text" placeholder="* decision   ! action @fri   > waiting @Person   note" required>
-      <button type="submit">Add</button>
+      <div class="add-row">
+        <input id="add-project" list="projects" placeholder="project" required>
+        <input id="add-meeting" placeholder="meeting (optional)">
+        <select id="add-type" title="Type">
+          <option value="note">note</option>
+          <option value="decision">decision</option>
+          <option value="action">action</option>
+          <option value="waiting">waiting</option>
+        </select>
+        <input id="add-due" placeholder="due: fri / 7 / 2026-05-30" hidden>
+        <input id="add-person" placeholder="person" hidden>
+      </div>
+      <div class="add-row">
+        <input id="add-text" placeholder="* decision   ! action @fri   > waiting @Person   note" required>
+        <button type="submit">Add</button>
+      </div>
     </form>
   </section>
 
