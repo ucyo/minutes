@@ -117,7 +117,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
       <input id="since" placeholder="since: mon / 14 / 2026-05-20" title="Since">
       <label class="chk"><input type="checkbox" id="open"> open</label>
       <label class="chk"><input type="checkbox" id="all"> all</label>
-      <label class="chk"><input type="checkbox" id="newest"> newest first</label>
+      <label class="chk"><input type="checkbox" id="newest" checked> newest first</label>
     </div>
   </div>
 </header>
