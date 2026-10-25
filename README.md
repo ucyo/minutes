@@ -94,18 +94,17 @@ make test
 
 ### Publishing to PyPI
 
-Releases are built and uploaded with `twine` inside the test container, using the API tokens in `.pypirc` (which is not committed).
+Releases are built and published by the GitHub Actions workflow in `.github/workflows/release.yml`, which runs on `v*` tags. It builds the sdist and wheel, creates a GitHub release with the artifacts attached, and publishes to PyPI via OIDC trusted publishing (no API tokens). Beta/rc/dev tags are published as GitHub pre-releases.
 
-**Dry run against TestPyPI:**
-
-```bash
-make dry-run
-```
-
-**Publish to PyPI:**
+**Release a version:**
 
 ```bash
-make push
+uvx hatch version beta          # bump, e.g. 0.2.1 -> 0.2.1b0
+uv lock                         # sync uv.lock
+git add pyproject.toml uv.lock
+git commit -m "chore: bump version to 0.2.1b0"
+git tag v0.2.1b0
+git push origin v0.2.1b0
 ```
 
-Both targets clean `dist/`, build the sdist and wheel with `python -m build`, validate them with `twine check`, and upload. `make dry-run` targets TestPyPI, while `make push` uploads to PyPI. Bump the `version` in `pyproject.toml` before publishing.
+The workflow fails if the tag does not match the `version` in `pyproject.toml`. Other bump rules: `uvx hatch version patch|minor|major`, or an explicit version such as `uvx hatch version 0.3.0b1`. Use `uvx hatch version release` to drop a pre-release suffix.
