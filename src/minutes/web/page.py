@@ -297,6 +297,7 @@ function populateProjects(projects) {
     projectSel.value = current;
   } else if (pendingProject && projects.includes(pendingProject)) {
     projectSel.value = pendingProject;
+    addProject.value = pendingProject;
     pendingProject = null;
   } else {
     projectSel.value = '';
@@ -416,7 +417,10 @@ async function load() {
   } catch (err) { alert(err.message); }
 }
 
-projectSel.addEventListener('change', load);
+projectSel.addEventListener('change', () => {
+  addProject.value = projectSel.value;
+  load();
+});
 sinceEl.addEventListener('change', load);
 openEl.addEventListener('change', load);
 allEl.addEventListener('change', render);
