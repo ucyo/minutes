@@ -47,8 +47,30 @@ def logs(
         help="Add an entry inline (requires --project) and exit",
     ),
     file: Optional[Path] = typer.Option(None, "--file"),
+    web: bool = typer.Option(False, "--web", help="Serve entries in a local web UI instead of the TUI"),
+    port: int = typer.Option(8123, "--port", help="Port for the web UI (only with --web)"),
+    no_open: bool = typer.Option(False, "--no-open", help="Do not open the browser when --web starts"),
 ) -> None:
-    """Browse entries interactively, or add an entry inline with --add."""
+    """Browse entries interactively, or add an entry inline with --web."""
+    if web:
+        from .web.server import run as run_web
+
+        initial: dict[str, str] = {}
+        if project:
+            initial["project"] = project
+        if since:
+            initial["since"] = since
+        if open_only:
+            initial["open"] = "1"
+        if show_all:
+            initial["all"] = "1"
+        try:
+            run_web(store=file, port=port, open_browser=not no_open, initial=initial)
+        except OSError as exc:
+            console.print(f"[red]Could not start web server: {exc}[/red]")
+            raise typer.Exit(1)
+        return
+
     if add_text is not None:
         if project is None:
             console.print("[red]Inline add requires --project.[/red]")
