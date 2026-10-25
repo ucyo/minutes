@@ -59,7 +59,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 #add-text { flex: 1 1 320px; min-width: 220px; }
 .bucket {
   color: var(--dim); font-size: 12px; text-transform: uppercase;
-  letter-spacing: .08em; margin: 22px 0 4px; font-weight: 600;
+  letter-spacing: .08em; margin: 14px 0 2px; font-weight: 600;
 }
 .empty { color: var(--dim); padding: 8px 0; }
 .entry {
@@ -67,7 +67,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
   grid-template-columns: 9.2em 9em 5em minmax(10em, 1fr) auto;
   column-gap: 10px;
   align-items: baseline;
-  padding: 6px 8px; border-radius: 4px;
+  padding: 2px 8px; border-radius: 4px;
 }
 .entry.alt { background: var(--panel); }
 .entry:hover { background: var(--panel2); }
