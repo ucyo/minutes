@@ -58,6 +58,14 @@ minutes logs --since mon              # since Monday
 minutes logs --open
 ```
 
+**Web UI:**
+
+```bash
+minutes logs --web
+```
+
+Serves the same browse + add flow as a local web page at `http://127.0.0.1:8123` and opens your browser automatically. Use `--port` to pick another port, `--no-open` to skip opening the browser, and `--file` to point at a different store. Initial filters pass through: `minutes logs --web --project api-migration --since mon --open`. Stop with `Ctrl-C`.
+
 ## Running tests
 
 ```bash
