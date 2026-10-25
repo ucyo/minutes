@@ -24,7 +24,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from .add import _toolbar as _edit_toolbar, parse_line
-from .display import _BUCKET_ORDER, _date_bucket
+from .display import _BUCKET_ORDER, _date_bucket, format_ts
 from .models import Entry, EntryStatus, EntryType
 from .store import append_entry, delete_entry, get_projects, mark_done
 
@@ -134,7 +134,7 @@ def _build_display(
                 else:
                     checkbox = " [ ]"
 
-            ts = entry.ts[:16].replace("T", " ")
+            ts = format_ts(entry.ts, bucket_name)
             marker = ">" if sel else (marker_override or " ")
 
             has_due = (

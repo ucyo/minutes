@@ -284,6 +284,19 @@ function dueClass(due) {
   return '';
 }
 
+function formatTs(ts, bucket) {
+  const s = ts || '';
+  const time = s.slice(11, 16);
+  const datePart = s.slice(0, 10);
+  if (bucket === 'Today' || bucket === 'Yesterday') return time;
+  if (bucket === 'This week' || bucket === 'Last week') {
+    const d = new Date(datePart + 'T00:00:00');
+    const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+    return wd + ' ' + time;
+  }
+  return datePart;
+}
+
 function entryToRaw(e) {
   if (e.type === 'decision') return '* ' + e.text;
   if (e.type === 'action') return '! ' + e.text + (e.due ? ' @' + e.due : '');
@@ -297,7 +310,7 @@ function btn(action, label, title, id, danger) {
 
 function entryHtml(e, alt) {
   const cls = ((e.type === 'action' && e.status) ? ' ' + e.status : '') + (alt ? ' alt' : '');
-  const ts = (e.ts || '').replace('T', ' ');
+  const ts = formatTs(e.ts, e.bucket);
   let cb = '';
   if (e.type === 'action') {
     cb = e.status === 'done' ? ' <span class="cb done">[x]</span>'

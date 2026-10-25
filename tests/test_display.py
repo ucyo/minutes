@@ -6,7 +6,7 @@ import pytest
 from rich.console import Console as RichConsole
 
 import minutes.display as display_mod
-from minutes.display import _build_meta, _build_parts, _date_bucket, _due_style
+from minutes.display import _build_meta, _build_parts, _date_bucket, _due_style, format_ts
 from minutes.models import Entry, EntryStatus, EntryType
 
 
@@ -59,6 +59,29 @@ class TestDateBucket:
 
     def test_older(self):
         assert _date_bucket(date(2025, 12, 31), self.TODAY) == "Older"
+
+
+class TestFormatTs:
+    def test_today_shows_time(self):
+        assert format_ts("2026-05-30T11:18", "Today") == "11:18"
+
+    def test_yesterday_shows_time(self):
+        assert format_ts("2026-05-29T11:18", "Yesterday") == "11:18"
+
+    def test_this_week_shows_weekday_and_time(self):
+        assert format_ts("2026-05-26T11:18", "This week") == "Tue 11:18"
+
+    def test_last_week_shows_weekday_and_time(self):
+        assert format_ts("2026-05-20T11:18", "Last week") == "Wed 11:18"
+
+    def test_this_month_shows_date(self):
+        assert format_ts("2026-05-10T11:18", "This month") == "2026-05-10"
+
+    def test_this_year_shows_date(self):
+        assert format_ts("2026-02-15T11:18", "This year") == "2026-02-15"
+
+    def test_older_shows_date(self):
+        assert format_ts("2025-12-31T11:18", "Older") == "2025-12-31"
 
 
 class TestDueStyle:

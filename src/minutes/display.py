@@ -47,6 +47,17 @@ def _due_style(due_str: Optional[str]) -> str:
     return ""
 
 
+def format_ts(ts: str, bucket: str) -> str:
+    """Render a timestamp to match its date bucket's granularity."""
+    time = ts[11:16]
+    if bucket in ("Today", "Yesterday"):
+        return time
+    if bucket in ("This week", "Last week"):
+        weekday = date.fromisoformat(ts[:10]).strftime("%a")
+        return f"{weekday} {time}"
+    return ts[:10]
+
+
 _TYPE_COLORS = {
     EntryType.DECISION: "blue",
     EntryType.ACTION: "yellow",
@@ -117,8 +128,8 @@ def _make_table(show_all: bool) -> Table:
     return table
 
 
-def _add_row(table: Table, entry: Entry, show_all: bool) -> None:
-    ts = Text(entry.ts[:16].replace("T", " "), style="dim")
+def _add_row(table: Table, entry: Entry, show_all: bool, bucket: str) -> None:
+    ts = Text(format_ts(entry.ts, bucket), style="dim")
     proj = Text(entry.project, style="cyan")
     label, content = _build_parts(entry)
     if show_all:
@@ -156,6 +167,6 @@ def render_logs(
         console.rule(f"[dim]{bucket}[/dim]", style="dim")
         table = _make_table(show_all)
         for entry in bucket_entries:
-            _add_row(table, entry, show_all)
+            _add_row(table, entry, show_all, bucket)
         console.print(table)
         first = False
