@@ -8,6 +8,14 @@ Capture notes from meetings, track actions and decisions per project, and get a 
 
 **Requirements:** Python 3.11+
 
+**Install from PyPI (recommended):**
+
+```bash
+pipx install minutes-cli
+```
+
+**Development install:**
+
 ```bash
 pip install -e .
 ```
@@ -71,6 +79,24 @@ Serves the same browse + add flow as a local web page at `http://127.0.0.1:8123`
 ```bash
 make test
 ```
+
+## Publishing to PyPI
+
+Releases are built and uploaded with `twine` inside the test container, using the API tokens in `.pypirc` (which is not committed).
+
+**Dry run against TestPyPI:**
+
+```bash
+make dry-run
+```
+
+**Publish to PyPI:**
+
+```bash
+make push
+```
+
+Both targets clean `dist/`, build the sdist and wheel with `python -m build`, validate them with `twine check`, and upload. `make dry-run` targets TestPyPI, while `make push` uploads to PyPI. Bump the `version` in `pyproject.toml` before publishing.
 
 ## Data
 
