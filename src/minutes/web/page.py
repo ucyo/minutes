@@ -135,7 +135,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
           <option value="action">action</option>
           <option value="waiting">waiting</option>
         </select>
-        <input id="add-due" placeholder="due: fri / 7 / 2026-05-30" hidden>
+        <input id="add-due" type="date" hidden>
         <input id="add-person" placeholder="person" hidden>
       </div>
       <div class="add-row">
@@ -231,6 +231,30 @@ function composeLine(p) {
   return core;
 }
 
+const WEEKDAYS = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6, sun: 0 };
+
+function isoDate(d) {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+function resolveDue(token) {
+  const t = (token || '').trim().toLowerCase();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  if (t in WEEKDAYS) {
+    const delta = (WEEKDAYS[t] - today.getDay() + 7) % 7 || 7;
+    const d = new Date(today); d.setDate(d.getDate() + delta);
+    return isoDate(d);
+  }
+  if (/^\d+$/.test(t)) {
+    const d = new Date(today); d.setDate(d.getDate() + parseInt(t, 10));
+    return isoDate(d);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  return '';
+}
+
 function showHelpers(type) {
   addDue.hidden = type !== 'action';
   addPerson.hidden = type !== 'waiting';
@@ -241,7 +265,7 @@ function syncFromText() {
   syncing = true;
   const p = parseLine(addText.value);
   addType.value = p.type;
-  addDue.value = p.due;
+  addDue.value = resolveDue(p.due);
   addPerson.value = p.person;
   showHelpers(p.type);
   syncing = false;
@@ -252,7 +276,7 @@ function syncToText() {
   syncing = true;
   const p = parseLine(addText.value);
   p.type = addType.value;
-  p.due = addDue.value.trim();
+  p.due = addDue.value;
   p.person = addPerson.value.trim();
   addText.value = composeLine(p);
   showHelpers(p.type);
@@ -262,6 +286,7 @@ function syncToText() {
 addText.addEventListener('input', syncFromText);
 addType.addEventListener('change', syncToText);
 addDue.addEventListener('input', syncToText);
+addDue.addEventListener('change', syncToText);
 addPerson.addEventListener('input', syncToText);
 
 function populateProjects(projects) {
