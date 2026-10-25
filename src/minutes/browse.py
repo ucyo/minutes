@@ -24,7 +24,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from .add import _toolbar as _edit_toolbar, parse_line
-from .display import _BUCKET_ORDER, _date_bucket, format_ts
+from .display import _BUCKET_ORDER, _TS_WIDTH, _date_bucket, format_ts
 from .models import Entry, EntryStatus, EntryType
 from .store import append_entry, delete_entry, get_projects, mark_done
 
@@ -134,7 +134,7 @@ def _build_display(
                 else:
                     checkbox = " [ ]"
 
-            ts = format_ts(entry.ts, bucket_name)
+            ts = format_ts(entry.ts, bucket_name).ljust(_TS_WIDTH)
             marker = ">" if sel else (marker_override or " ")
 
             has_due = (
@@ -145,8 +145,8 @@ def _build_display(
             has_person = entry.type == EntryType.WAITING and entry.person
 
             term_width = get_app().output.get_size().columns
-            # prefix: "  {marker} {ts}  " (22) + project (14) + label (11) = 47
-            PREFIX = 47
+            # prefix: "  {marker} {ts}  " (16) + project (14) + label (11) = 41
+            PREFIX = 41
             text_avail = max(1, term_width - PREFIX)
 
             def _fill(used: int) -> tuple[str, str]:

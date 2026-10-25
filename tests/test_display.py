@@ -215,3 +215,14 @@ class TestRenderLogs:
         assert "Older" in out
         assert "Today" not in out
         assert "This week" not in out
+
+    def test_project_column_aligned_across_buckets(self, capturing_console):
+        today = date.today()
+        entries = [
+            _entry(ts=f"{today.isoformat()}T10:00", text="recent"),
+            _entry(ts=f"{(today - timedelta(days=40)).isoformat()}T10:00", text="older"),
+        ]
+        display_mod.render_logs(entries)
+        proj_lines = [l for l in capturing_console.export_text().splitlines() if "proj" in l]
+        assert len(proj_lines) == 2
+        assert proj_lines[0].index("proj") == proj_lines[1].index("proj")

@@ -13,6 +13,9 @@ console = Console()
 
 _DUE_SOON_DAYS = 2
 
+# Widest formatted timestamp ("YYYY-MM-DD"), used to keep columns aligned.
+_TS_WIDTH = 10
+
 _BUCKET_ORDER = ["Older", "This year", "Last month", "This month", "Last week", "This week", "Yesterday", "Today"]
 
 
@@ -117,7 +120,7 @@ def _build_meta(entry: Entry) -> tuple[Text, Text, Text]:
 
 def _make_table(show_all: bool) -> Table:
     table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
-    table.add_column(no_wrap=True)   # timestamp
+    table.add_column(no_wrap=True, min_width=_TS_WIDTH)   # timestamp
     table.add_column(no_wrap=True)   # project
     table.add_column(no_wrap=True)   # type label
     table.add_column()               # content — wraps here
