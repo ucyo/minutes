@@ -4,11 +4,11 @@ Project-centric meeting notes and task tracker for the command line.
 
 Capture notes from meetings, track actions and decisions per project, and get a clean weekly summary before giving updates.
 
-## Getting started
+## Installation
 
 **Requirements:** Python 3.11+
 
-**Install from PyPI (recommended):**
+**From PyPI (recommended):**
 
 ```bash
 pipx install minutes-cli
@@ -20,7 +20,9 @@ pipx install minutes-cli
 pip install -e .
 ```
 
-**Add entries after a meeting:**
+## Usage
+
+### Add entries
 
 ```bash
 minutes logs
@@ -43,15 +45,7 @@ For one-off entries from scripts, add inline:
 minutes logs --add "Write migration guide @fri" --project api-migration
 ```
 
-**Enable shell completion (once):**
-
-```bash
-minutes --install-completion
-```
-
-After restarting your shell, `minutes logs -p <TAB>` will autocomplete project names from your store.
-
-**Browse entries:**
+### Browse entries
 
 ```bash
 minutes logs                          # all projects, all entries
@@ -60,13 +54,13 @@ minutes logs --since 14               # last 14 days
 minutes logs --since mon              # since Monday
 ```
 
-**Check open actions:**
+### Open actions
 
 ```bash
 minutes logs --open
 ```
 
-**Web UI:**
+### Web UI
 
 ```bash
 minutes logs --web
@@ -74,13 +68,31 @@ minutes logs --web
 
 Serves the same browse + add flow as a local web page at `http://127.0.0.1:8123` and opens your browser automatically. Use `--port` to pick another port, `--no-open` to skip opening the browser, and `--file` to point at a different store. Initial filters pass through: `minutes logs --web --project api-migration --since mon --open`. Stop with `Ctrl-C`.
 
-## Running tests
+### Shell completion
+
+Enable once:
+
+```bash
+minutes --install-completion
+```
+
+After restarting your shell, `minutes logs -p <TAB>` will autocomplete project names from your store.
+
+## Data
+
+Entries are stored as JSONL at `~/.local/share/minutes/entries.jsonl`.
+
+See [docs/whitepaper.md](docs/whitepaper.md) for the full specification.
+
+## Development
+
+### Running tests
 
 ```bash
 make test
 ```
 
-## Publishing to PyPI
+### Publishing to PyPI
 
 Releases are built and uploaded with `twine` inside the test container, using the API tokens in `.pypirc` (which is not committed).
 
@@ -97,9 +109,3 @@ make push
 ```
 
 Both targets clean `dist/`, build the sdist and wheel with `python -m build`, validate them with `twine check`, and upload. `make dry-run` targets TestPyPI, while `make push` uploads to PyPI. Bump the `version` in `pyproject.toml` before publishing.
-
-## Data
-
-Entries are stored as JSONL at `~/.local/share/minutes/entries.jsonl`.
-
-See [docs/whitepaper.md](docs/whitepaper.md) for the full specification.
