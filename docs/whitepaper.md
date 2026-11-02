@@ -217,7 +217,9 @@ minutes logs --web --project api-migration --since mon --open
 ```
 
 The web UI adds a newest-first ordering toggle, a date picker for action due dates,
-and type-specific add fields. It has no build step and no external assets.
+and type-specific add fields. The meeting filter is scoped to the selected project,
+and the add form autocompletes meeting names from that project. It has no build
+step and no external assets.
 
 ### `minutes info`
 

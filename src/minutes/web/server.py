@@ -17,6 +17,8 @@ from ..store import (
     append_entry,
     delete_entry,
     filter_entries,
+    get_meetings,
+    get_meetings_by_project,
     get_projects,
     get_recent_projects,
     load_entries,
@@ -83,10 +85,12 @@ class WebApp:
     def _list_entries(self, query: dict) -> tuple[int, str, bytes]:
         try:
             since = parse_since(query["since"]) if query.get("since") else None
+            project = query.get("project") or None
             filtered = filter_entries(
                 load_entries(self.store),
                 since=since,
-                project=query.get("project") or None,
+                project=project,
+                meeting=query.get("meeting") or None,
                 open_only=query.get("open") in ("1", "true", "yes"),
             )
         except ValueError:
@@ -106,6 +110,8 @@ class WebApp:
             "entries": out,
             "projects": get_projects(self.store),
             "recent_projects": get_recent_projects(self.store),
+            "meetings": get_meetings(self.store, project=project),
+            "meetings_by_project": get_meetings_by_project(self.store),
         })
 
     def _add_entries(self, body: Optional[bytes]) -> tuple[int, str, bytes]:

@@ -60,6 +60,25 @@ def get_recent_projects(store: Optional[Path] = None, limit: int = 5) -> list[st
     return [project for project, _ts in ordered[:limit]]
 
 
+def get_meetings(store: Optional[Path] = None, project: Optional[str] = None) -> list[str]:
+    """Return meeting names, optionally scoped to a single project."""
+    meetings = {
+        e.meeting
+        for e in load_entries(store)
+        if e.meeting and (project is None or e.project == project)
+    }
+    return sorted(meetings)
+
+
+def get_meetings_by_project(store: Optional[Path] = None) -> dict[str, list[str]]:
+    """Return meeting names grouped by project."""
+    meetings: dict[str, set[str]] = {}
+    for e in load_entries(store):
+        if e.meeting:
+            meetings.setdefault(e.project, set()).add(e.meeting)
+    return {project: sorted(names) for project, names in sorted(meetings.items())}
+
+
 def parse_since(value: str) -> date:
     today = date.today()
     if value == "mon":
@@ -78,12 +97,15 @@ def filter_entries(
     project: Optional[str] = None,
     entry_type: Optional[EntryType] = None,
     open_only: bool = False,
+    meeting: Optional[str] = None,
 ) -> list[Entry]:
     result = []
     for e in entries:
         if since and date.fromisoformat(e.ts[:10]) < since:
             continue
         if project and e.project != project:
+            continue
+        if meeting and e.meeting != meeting:
             continue
         if entry_type and e.type != entry_type:
             continue

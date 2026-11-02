@@ -50,7 +50,28 @@ class TestList:
     def test_empty(self, tmp_path):
         status, data = _json(_app(tmp_path).dispatch("GET", "/api/entries", None))
         assert status == 200
-        assert data == {"entries": [], "projects": [], "recent_projects": []}
+        assert data == {"entries": [], "projects": [], "recent_projects": [], "meetings": [], "meetings_by_project": {}}
+
+    def test_meetings_scoped_to_project(self, tmp_path):
+        app = _app(tmp_path)
+        append_entry(_entry(project="alpha", meeting="standup"), app.store)
+        append_entry(_entry(project="alpha", meeting="review"), app.store)
+        append_entry(_entry(project="beta", meeting="standup"), app.store)
+        append_entry(_entry(project="beta", meeting="planning"), app.store)
+        _, data = _json(app.dispatch("GET", "/api/entries?project=alpha", None))
+        assert data["meetings"] == ["review", "standup"]
+        assert data["meetings_by_project"] == {
+            "alpha": ["review", "standup"],
+            "beta": ["planning", "standup"],
+        }
+
+    def test_filter_meeting(self, tmp_path):
+        app = _app(tmp_path)
+        append_entry(_entry(project="alpha", meeting="standup"), app.store)
+        append_entry(_entry(project="alpha", meeting="review"), app.store)
+        append_entry(_entry(project="alpha", meeting=None), app.store)
+        _, data = _json(app.dispatch("GET", "/api/entries?meeting=review", None))
+        assert [e["meeting"] for e in data["entries"]] == ["review"]
 
     def test_recent_projects_are_latest_five(self, tmp_path):
         app = _app(tmp_path)

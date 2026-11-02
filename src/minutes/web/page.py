@@ -115,6 +115,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
     <h1>minutes</h1>
     <div class="filters">
       <select id="project" title="Project"><option value="">All projects</option></select>
+      <select id="meeting" title="Meeting"><option value="">All meetings</option></select>
       <input id="since" placeholder="since: mon / 14 / 2026-05-20" title="Since">
       <label class="chk"><input type="checkbox" id="open"> open</label>
       <label class="chk"><input type="checkbox" id="all"> all</label>
@@ -128,7 +129,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
     <form id="add-form" autocomplete="off">
       <div class="add-row">
         <input id="add-project" list="projects" placeholder="project" required>
-        <input id="add-meeting" placeholder="meeting (optional)">
+        <input id="add-meeting" list="meetings" placeholder="meeting (optional)">
         <select id="add-type" title="Type">
           <option value="note">note</option>
           <option value="decision">decision</option>
@@ -149,6 +150,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 </main>
 
 <datalist id="projects"></datalist>
+<datalist id="meetings"></datalist>
 
 <div id="modal" class="modal hidden">
   <div class="modal-card">
@@ -164,6 +166,7 @@ main { max-width: 1000px; margin: 0 auto; padding: 16px; }
 <script>
 const $ = (id) => document.getElementById(id);
 const projectSel = $('project');
+const meetingSel = $('meeting');
 const sinceEl = $('since');
 const openEl = $('open');
 const allEl = $('all');
@@ -177,6 +180,7 @@ const addPerson = $('add-person');
 const addText = $('add-text');
 const entriesEl = $('entries');
 const projectsDatalist = $('projects');
+const meetingsDatalist = $('meetings');
 const modal = $('modal');
 const modalTitle = $('modal-title');
 const modalInput = $('modal-input');
@@ -186,6 +190,7 @@ const modalCancel = $('modal-cancel');
 const BUCKETS = ['Older', 'This year', 'Last month', 'This month', 'Last week', 'This week', 'Yesterday', 'Today'];
 
 let cache = { entries: [] };
+let meetingsByProject = {};
 let syncing = false;
 let modalOnSave = null;
 let pendingProject = new URLSearchParams(location.search).get('project');
@@ -315,6 +320,18 @@ function populateProjects(projects, recentProjects) {
   projectsDatalist.innerHTML = projects.map(p => `<option value="${esc(p)}"></option>`).join('');
 }
 
+function populateMeetings(meetings) {
+  const current = meetingSel.value;
+  meetingSel.innerHTML = '<option value="">All meetings</option>' +
+    meetings.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  meetingSel.value = meetings.includes(current) ? current : '';
+}
+
+function populateAddMeetingOptions() {
+  const meetings = meetingsByProject[addProject.value.trim()] || [];
+  meetingsDatalist.innerHTML = meetings.map(m => `<option value="${esc(m)}"></option>`).join('');
+}
+
 function dueClass(due) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const d = new Date(due + 'T00:00:00');
@@ -417,20 +434,29 @@ function render() {
 async function load() {
   const q = new URLSearchParams();
   if (projectSel.value) q.set('project', projectSel.value);
+  if (meetingSel.value) q.set('meeting', meetingSel.value);
   if (sinceEl.value.trim()) q.set('since', sinceEl.value.trim());
   if (openEl.checked) q.set('open', '1');
   try {
     const data = await api('GET', '/api/entries?' + q.toString());
     cache.entries = data.entries || [];
+    meetingsByProject = data.meetings_by_project || {};
     populateProjects(data.projects || [], data.recent_projects || []);
+    populateMeetings(data.meetings || []);
+    populateAddMeetingOptions();
     render();
   } catch (err) { alert(err.message); }
 }
 
 projectSel.addEventListener('change', () => {
   addProject.value = projectSel.value;
+  meetingSel.value = '';
+  populateAddMeetingOptions();
   load();
 });
+meetingSel.addEventListener('change', load);
+addProject.addEventListener('input', populateAddMeetingOptions);
+addProject.addEventListener('change', populateAddMeetingOptions);
 sinceEl.addEventListener('change', load);
 openEl.addEventListener('change', load);
 allEl.addEventListener('change', render);

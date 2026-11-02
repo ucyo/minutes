@@ -9,6 +9,8 @@ from minutes.models import Entry, EntryStatus, EntryType
 from minutes.store import (
     append_entry,
     filter_entries,
+    get_meetings,
+    get_meetings_by_project,
     load_entries,
     mark_done,
     parse_since,
@@ -117,9 +119,41 @@ class TestFilterEntries:
         result = filter_entries(self._entries(), open_only=True)
         assert all(e.type in (EntryType.ACTION, EntryType.WAITING) for e in result)
 
+    def test_filter_by_meeting(self):
+        entries = [
+            _entry(project="alpha", meeting="standup"),
+            _entry(project="alpha", meeting="review"),
+            _entry(project="beta", meeting="standup"),
+        ]
+        result = filter_entries(entries, meeting="standup")
+        assert len(result) == 2
+        assert all(e.meeting == "standup" for e in result)
+
     def test_no_filters_returns_all(self):
         entries = self._entries()
         assert filter_entries(entries) == entries
+
+
+class TestGetMeetings:
+    def test_returns_sorted_distinct_meetings(self, store):
+        for meeting in ["review", "standup", "review", None]:
+            append_entry(_entry(meeting=meeting), store)
+        assert get_meetings(store) == ["review", "standup"]
+
+    def test_scoped_to_project(self, store):
+        append_entry(_entry(project="alpha", meeting="review"), store)
+        append_entry(_entry(project="beta", meeting="planning"), store)
+        assert get_meetings(store, project="beta") == ["planning"]
+
+    def test_grouped_by_project(self, store):
+        append_entry(_entry(project="alpha", meeting="standup"), store)
+        append_entry(_entry(project="alpha", meeting="review"), store)
+        append_entry(_entry(project="beta", meeting="planning"), store)
+        append_entry(_entry(project="beta", meeting=None), store)
+        assert get_meetings_by_project(store) == {
+            "alpha": ["review", "standup"],
+            "beta": ["planning"],
+        }
 
 
 class TestMarkDone:
