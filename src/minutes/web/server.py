@@ -18,6 +18,7 @@ from ..store import (
     delete_entry,
     filter_entries,
     get_projects,
+    get_recent_projects,
     load_entries,
     mark_done,
     parse_since,
@@ -101,7 +102,11 @@ class WebApp:
             except ValueError:
                 d["bucket"] = "Older"
             out.append(d)
-        return self._json({"entries": out, "projects": get_projects(self.store)})
+        return self._json({
+            "entries": out,
+            "projects": get_projects(self.store),
+            "recent_projects": get_recent_projects(self.store),
+        })
 
     def _add_entries(self, body: Optional[bytes]) -> tuple[int, str, bytes]:
         data = self._read_json(body)

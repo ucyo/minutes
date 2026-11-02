@@ -289,10 +289,20 @@ addDue.addEventListener('input', syncToText);
 addDue.addEventListener('change', syncToText);
 addPerson.addEventListener('input', syncToText);
 
-function populateProjects(projects) {
+function populateProjects(projects, recentProjects) {
   const current = projectSel.value;
-  projectSel.innerHTML = '<option value="">All projects</option>' +
-    projects.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  const recent = (recentProjects || []).filter(p => projects.includes(p));
+  const recentSet = new Set(recent);
+  const rest = projects.filter(p => !recentSet.has(p));
+  const option = p => `<option value="${esc(p)}">${esc(p)}</option>`;
+  let html = '<option value="">All projects</option>';
+  if (recent.length) {
+    html += '<optgroup label="Latest 5">' + recent.map(option).join('') + '</optgroup>';
+  }
+  if (rest.length) {
+    html += '<optgroup label="All projects">' + rest.map(option).join('') + '</optgroup>';
+  }
+  projectSel.innerHTML = html;
   if (projects.includes(current)) {
     projectSel.value = current;
   } else if (pendingProject && projects.includes(pendingProject)) {
@@ -412,7 +422,7 @@ async function load() {
   try {
     const data = await api('GET', '/api/entries?' + q.toString());
     cache.entries = data.entries || [];
-    populateProjects(data.projects || []);
+    populateProjects(data.projects || [], data.recent_projects || []);
     render();
   } catch (err) { alert(err.message); }
 }

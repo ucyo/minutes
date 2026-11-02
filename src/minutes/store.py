@@ -49,6 +49,17 @@ def get_projects(store: Optional[Path] = None) -> list[str]:
     return sorted(projects.keys())
 
 
+def get_recent_projects(store: Optional[Path] = None, limit: int = 5) -> list[str]:
+    """Return the projects with the most recent entries, newest first."""
+    entries = load_entries(store)
+    latest: dict[str, str] = {}
+    for e in entries:
+        if e.project not in latest or e.ts > latest[e.project]:
+            latest[e.project] = e.ts
+    ordered = sorted(latest.items(), key=lambda item: item[1], reverse=True)
+    return [project for project, _ts in ordered[:limit]]
+
+
 def parse_since(value: str) -> date:
     today = date.today()
     if value == "mon":

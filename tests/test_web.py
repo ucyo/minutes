@@ -50,7 +50,15 @@ class TestList:
     def test_empty(self, tmp_path):
         status, data = _json(_app(tmp_path).dispatch("GET", "/api/entries", None))
         assert status == 200
-        assert data == {"entries": [], "projects": []}
+        assert data == {"entries": [], "projects": [], "recent_projects": []}
+
+    def test_recent_projects_are_latest_five(self, tmp_path):
+        app = _app(tmp_path)
+        for i, project in enumerate(["alpha", "beta", "gamma", "delta", "epsilon", "zeta"]):
+            append_entry(_entry(project=project, ts=f"2026-05-{i + 1:02d}T10:00"), app.store)
+        _, data = _json(app.dispatch("GET", "/api/entries", None))
+        assert data["projects"] == ["alpha", "beta", "delta", "epsilon", "gamma", "zeta"]
+        assert data["recent_projects"] == ["zeta", "epsilon", "delta", "gamma", "beta"]
 
     def test_lists_entries_sorted_with_bucket(self, tmp_path):
         app = _app(tmp_path)
